@@ -108,8 +108,6 @@
             </td>
             <td>
                 <div class="actions">
-                    <a th:href="@{/halls/details/{id}(id=${hall.hallId})}"
-                       class="btn btn-info btn-sm">Детали</a>
                     <a th:href="@{/halls/edit/{id}(id=${hall.hallId})}"
                        class="btn btn-warning btn-sm">Редактировать</a>
                     <form th:action="@{/halls/delete/{id}(id=${hall.hallId})}"
