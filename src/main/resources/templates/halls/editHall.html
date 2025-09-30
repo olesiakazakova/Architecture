@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Редактирование зала</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .checkbox-group {
+      display: flex;
+      gap: 15px;
+      margin: 10px 0;
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+    .btn-primary {
+      background-color: #007bff;
+      color: white;
+    }
+    .btn-secondary {
+      background-color: #6c757d;
+      color: white;
+    }
+    .form-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+<nav>
+  <a href="/films">Фильмы</a>
+  <a href="/halls">Залы</a>
+  <a href="/sessions">Сеансы</a>
+  <a href="/tickets">Билеты</a>
+  <a href="/users">Пользователи</a>
+</nav>
+
+<div class="form-container">
+  <h1>Редактирование зала</h1>
+
+  <!-- Сообщения об ошибках -->
+  <div th:if="${error}" class="alert alert-error" style="color: red; margin-bottom: 15px;">
+    <span th:text="${error}"></span>
+  </div>
+
+  <form th:action="@{/halls/edit/{id}(id=${hall.hallId})}" th:object="${hall}" method="post">
+
+    <div class="form-group">
+      <label for="hallId">ID зала:</label>
+      <input type="number" id="hallId" th:field="*{hallId}" required readonly style="background-color: #f5f5f5;"/>
+    </div>
+
+    <div class="form-group">
+      <label for="numberSeats">Количество мест:</label>
+      <input type="number" id="numberSeats" th:field="*{numberSeats}" min="1" required>
+    </div>
+
+    <div class="form-group">
+      <label for="hallType">Тип зала:</label>
+      <select id="hallType" th:field="*{hallType}" required>
+        <option value="">Выберите тип зала</option>
+        <option value="STANDARD">STANDARD</option>
+        <option value="VIP">VIP</option>
+        <option value="IMAX">IMAX</option>
+        <option value="PREMIUM">PREMIUM</option>
+        <option value="DELUXE">DELUXE</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="screenSize">Размер экрана (метры):</label>
+      <input type="number" id="screenSize" th:field="*{screenSize}" min="0" step="0.1" placeholder="0.0">
+    </div>
+
+    <div class="form-group">
+      <label>Оснащение:</label>
+      <div class="checkbox-group">
+        <div class="checkbox-item">
+          <input type="checkbox" id="has3d" th:field="*{has3d}">
+          <label for="has3d" style="display: inline; font-weight: normal;">3D</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="hasDolby" th:field="*{hasDolby}">
+          <label for="hasDolby" style="display: inline; font-weight: normal;">Dolby Sound</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="description">Описание зала:</label>
+      <textarea id="description" th:field="*{description}" rows="4"
+                placeholder="Введите описание зала (расположение, особенности и т.д.)"></textarea>
+    </div>
+
+    <div class="btn-group">
+      <button type="submit" class="btn btn-primary">Обновить зал</button>
+      <a href="/halls" class="btn btn-secondary">Отмена</a>
+    </div>
+  </form>
+</div>
+
+<script>
+  // Предзаполнение выпадающего списка типа зала
+  document.addEventListener('DOMContentLoaded', function() {
+    const hallType = document.getElementById('hallType');
+    const currentType = hallType.getAttribute('th:field');
+
+    // Thymeleaf автоматически установит значение через th:field
+    // Этот скрипт для отладки
+    console.log('Current hall type:', currentType);
+  });
+</script>
+
+</body>
+</html>
+
+

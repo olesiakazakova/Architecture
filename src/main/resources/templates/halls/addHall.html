@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавить зал</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .alert {
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            border: 1px solid;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+        .preset-info {
+            margin-top: 10px;
+            padding: 12px;
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .preset-details {
+            margin-top: 5px;
+            font-size: 13px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+<nav>
+    <a href="/films">Фильмы</a>
+    <a href="/halls">Залы</a>
+    <a href="/sessions">Сеансы</a>
+    <a href="/tickets">Билеты</a>
+    <a href="/users">Пользователи</a>
+</nav>
+
+<div class="form-container">
+    <h1>Добавить новый зал</h1>
+
+    <!-- Сообщения об ошибках -->
+    <div th:if="${error}" class="alert alert-error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <!-- Сообщения об успехе -->
+    <div th:if="${param.success}" class="alert alert-success">
+        Зал успешно создан!
+    </div>
+
+    <!-- Упрощенная форма - только выбор типа зала -->
+    <form th:action="@{/halls/add}" method="post">
+        <div class="form-group">
+            <label for="hallType">Выберите тип зала:</label>
+            <select id="hallType" name="hallType" required onchange="showPresetInfo(this.value)">
+                <option value="">-- Выберите тип зала --</option>
+                <option value="1">🎬 STANDARD - Стандартный кинозал</option>
+                <option value="2">⭐ VIP - Премиум комфорт</option>
+                <option value="3">🎞️ IMAX - Технология IMAX</option>
+                <option value="4">👑 PREMIUM - Премиальный зал</option>
+                <option value="5">💎 DELUXE - Улучшенный зал</option>
+            </select>
+
+            <div id="presetInfo" class="preset-info" style="display: none;">
+                <strong>Конфигурация зала:</strong>
+                <div id="presetDetails" class="preset-details"></div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button type="submit" class="btn btn-primary">Создать зал</button>
+            <a href="/halls" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+
+    <div style="margin-top: 30px; padding: 15px; background-color: #f8f9fa; border-radius: 6px;">
+        <p>Каждый тип зала автоматически создается с предустановленной конфигурацией:</p>
+        <ul style="margin-left: 20px;">
+            <li><strong>STANDARD</strong> - 100 мест, без 3D, экран 10м</li>
+            <li><strong>VIP</strong> - 50 мест, 3D + Dolby, экран 12м</li>
+            <li><strong>IMAX</strong> - 200 мест, 3D + Dolby, экран 22м</li>
+            <li><strong>PREMIUM</strong> - 80 мест, 3D + Dolby, экран 15м</li>
+            <li><strong>DELUXE</strong> - 120 мест, 3D, экран 18м</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    const presets = {
+        '1': {
+            name: 'STANDARD',
+            seats: '100 мест',
+            screen: 'Экран: 10м',
+            features: 'Оснащение: без 3D, без Dolby',
+            description: 'Стандартный кинозал'
+        },
+        '2': {
+            name: 'VIP',
+            seats: '50 мест',
+            screen: 'Экран: 12м',
+            features: 'Оснащение: 3D + Dolby Sound',
+            description: 'VIP зал с повышенным комфортом'
+        },
+        '3': {
+            name: 'IMAX',
+            seats: '200 мест',
+            screen: 'Экран: 22м',
+            features: 'Оснащение: 3D + Dolby Sound',
+            description: 'Зал с технологией IMAX'
+        },
+        '4': {
+            name: 'PREMIUM',
+            seats: '80 мест',
+            screen: 'Экран: 15м',
+            features: 'Оснащение: 3D + Dolby Sound',
+            description: 'Премиальный кинозал'
+        },
+        '5': {
+            name: 'DELUXE',
+            seats: '120 мест',
+            screen: 'Экран: 18м',
+            features: 'Оснащение: 3D',
+            description: 'Улучшенный зал Deluxe'
+        }
+    };
+
+    function showPresetInfo(hallType) {
+        const infoDiv = document.getElementById('presetInfo');
+        const detailsDiv = document.getElementById('presetDetails');
+
+        if (hallType && presets[hallType]) {
+            const preset = presets[hallType];
+            detailsDiv.innerHTML = `
+                <div>🎯 <strong>${preset.name}</strong></div>
+                <div>🪑 ${preset.seats}</div>
+                <div>📺 ${preset.screen}</div>
+                <div>⚡ ${preset.features}</div>
+                <div>📝 ${preset.description}</div>
+            `;
+            infoDiv.style.display = 'block';
+        } else {
+            infoDiv.style.display = 'none';
+        }
+    }
+
+    // Показать информацию при загрузке, если уже выбран тип
+    document.addEventListener('DOMContentLoaded', function() {
+        const hallTypeSelect = document.getElementById('hallType');
+        if (hallTypeSelect.value) {
+            showPresetInfo(hallTypeSelect.value);
+        }
+    });
+</script>
+
+</body>
+</html>

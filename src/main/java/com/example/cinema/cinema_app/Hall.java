@@ -8,43 +8,146 @@ import java.util.List;
 @Table(name = "halls")
 public class Hall {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "hall_id")
     private int hallId;
 
     @Column(name = "number_seats", nullable = false)
     private int numberSeats;
 
+    @Column(name = "hall_type", nullable = false)
+    private String hallType;
+
+    @Column(name = "description")
+    private String description;
+
+    @Column(name = "has_3d")
+    private boolean has3d;
+
+    @Column(name = "has_dolby")
+    private boolean hasDolby;
+
+    @Column(name = "screen_size")
+    private double screenSize;
+
     @OneToMany(mappedBy = "hall", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Session> sessions = new ArrayList<>(); // Замените Hall на Session
+    private List<Session> sessions = new ArrayList<>();
 
-    public Hall() {
-    }
+    // Конструкторы
+    public Hall() {}
 
-    public Hall(int numberSeats) {
+    public Hall(int numberSeats, String hallType, String description,
+                boolean has3d, boolean hasDolby, double screenSize) {
         this.numberSeats = numberSeats;
+        this.hallType = hallType;
+        this.description = description;
+        this.has3d = has3d;
+        this.hasDolby = hasDolby;
+        this.screenSize = screenSize;
     }
 
-    public int getHallId() {
-        return hallId;
+    // Методы сборки (аналогично Car из примера)
+    public void buildBase(int seats) {
+        this.numberSeats = seats;
+        System.out.println("Установлено количество мест: " + seats);
     }
 
-    public void setHallId(int hallId) {
-        this.hallId = hallId;
+    public void buildHallType(String type) {
+        this.hallType = type;
+        System.out.println("Установлен тип зала: " + type);
     }
 
-    public int getNumberSeats() {
-        return numberSeats;
+    public void buildDescription(String desc) {
+        this.description = desc;
+        System.out.println("Добавлено описание: " + desc);
     }
 
-    public void setNumberSeats(int numberSeats) {
-        this.numberSeats = numberSeats;
+    public void build3d(boolean has3d) {
+        this.has3d = has3d;
+        System.out.println("3D поддержка: " + (has3d ? "да" : "нет"));
     }
 
-    public List<Session> getSessions() {
-        return sessions;
+    public void buildDolby(boolean hasDolby) {
+        this.hasDolby = hasDolby;
+        System.out.println("Dolby звук: " + (hasDolby ? "да" : "нет"));
     }
 
-    public void setSessions(List<Session> sessions) {
-        this.sessions = sessions;
+    public void buildScreenSize(double size) {
+        this.screenSize = size;
+        System.out.println("Установлен размер экрана: " + size + "м");
+    }
+
+    // Геттеры и сеттеры
+    public int getHallId() { return hallId; }
+    public void setHallId(int hallId) { this.hallId = hallId; }
+
+    public int getNumberSeats() { return numberSeats; }
+    public void setNumberSeats(int numberSeats) { this.numberSeats = numberSeats; }
+
+    public String getHallType() { return hallType; }
+    public void setHallType(String hallType) { this.hallType = hallType; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public boolean isHas3d() { return has3d; }
+    public void setHas3d(boolean has3d) { this.has3d = has3d; }
+
+    public boolean isHasDolby() { return hasDolby; }
+    public void setHasDolby(boolean hasDolby) { this.hasDolby = hasDolby; }
+
+    public double getScreenSize() { return screenSize; }
+    public void setScreenSize(double screenSize) { this.screenSize = screenSize; }
+
+    public List<Session> getSessions() { return sessions; }
+    public void setSessions(List<Session> sessions) { this.sessions = sessions; }
+
+    // Статический метод для Builder
+    public static HallBuilder builder() {
+        return new HallBuilder();
+    }
+
+    // Внутренний Builder класс (опционально)
+    public static class HallBuilder {
+        private int numberSeats;
+        private String hallType = "STANDARD";
+        private String description;
+        private boolean has3d = false;
+        private boolean hasDolby = false;
+        private double screenSize = 0.0;
+
+        public HallBuilder numberSeats(int numberSeats) {
+            this.numberSeats = numberSeats;
+            return this;
+        }
+
+        public HallBuilder hallType(String hallType) {
+            this.hallType = hallType;
+            return this;
+        }
+
+        public HallBuilder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public HallBuilder has3d(boolean has3d) {
+            this.has3d = has3d;
+            return this;
+        }
+
+        public HallBuilder hasDolby(boolean hasDolby) {
+            this.hasDolby = hasDolby;
+            return this;
+        }
+
+        public HallBuilder screenSize(double screenSize) {
+            this.screenSize = screenSize;
+            return this;
+        }
+
+        public Hall build() {
+            return new Hall(numberSeats, hallType, description, has3d, hasDolby, screenSize);
+        }
     }
 }
-

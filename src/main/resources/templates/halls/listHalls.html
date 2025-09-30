@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Список залов</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 2px;
+        }
+        .badge-standard { background-color: #e0e0e0; color: #333; }
+        .badge-vip { background-color: #ffd700; color: #000; }
+        .badge-imax { background-color: #007bff; color: #fff; }
+        .badge-premium { background-color: #28a745; color: #fff; }
+        .badge-deluxe { background-color: #dc3545; color: #fff; }
+        .feature-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            background-color: #17a2b8;
+            color: white;
+            border-radius: 8px;
+            font-size: 11px;
+            margin: 1px;
+        }
+        .actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .hall-details {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+<nav>
+    <a href="/films">Фильмы</a>
+    <a href="/halls" class="active">Залы</a>
+    <a href="/sessions">Сеансы</a>
+    <a href="/tickets">Билеты</a>
+    <a href="/users">Пользователи</a>
+</nav>
+
+<div class="container">
+    <h1>Список кинозалов</h1>
+
+    <!-- Сообщения об успехе/ошибке -->
+    <div th:if="${param.success}" class="alert alert-success">
+        Зал успешно добавлен/обновлен!
+    </div>
+    <div th:if="${param.deleteSuccess}" class="alert alert-success">
+        Зал успешно удален!
+    </div>
+    <div th:if="${param.error}" class="alert alert-error">
+        Произошла ошибка при выполнении операции.
+    </div>
+
+    <div class="header-actions">
+        <a href="/halls/add" class="btn btn-primary">Добавить новый зал</a>
+        <a href="/sessions" class="btn btn-secondary">Вернуться к сеансам</a>
+    </div>
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Тип зала</th>
+            <th>Количество мест</th>
+            <th>Размер экрана</th>
+            <th>Оснащение</th>
+            <th>Описание</th>
+            <th>Действия</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="hall : ${halls}">
+            <td th:text="${hall.hallId}"></td>
+            <td>
+                <span th:classappend="'badge badge-' + ${hall.hallType?.toLowerCase()}"
+                      th:text="${hall.hallType}">
+                </span>
+            </td>
+            <td th:text="${hall.numberSeats}"></td>
+            <td>
+                <span th:if="${hall.screenSize > 0}"
+                      th:text="${#numbers.formatDecimal(hall.screenSize, 1, 2)} + ' м'">
+                </span>
+                <span th:unless="${hall.screenSize > 0}">-</span>
+            </td>
+            <td>
+                <div class="hall-details">
+                    <span th:if="${hall.has3d}" class="feature-tag">3D</span>
+                    <span th:if="${hall.hasDolby}" class="feature-tag">Dolby</span>
+                    <span th:if="${!hall.has3d && !hall.hasDolby}">-</span>
+                </div>
+            </td>
+            <td>
+                <span th:if="${hall.description}"
+                      th:text="${#strings.abbreviate(hall.description, 30)}"
+                      title="${hall.description}">
+                </span>
+                <span th:unless="${hall.description}">-</span>
+            </td>
+            <td>
+                <div class="actions">
+                    <a th:href="@{/halls/details/{id}(id=${hall.hallId})}"
+                       class="btn btn-info btn-sm">Детали</a>
+                    <a th:href="@{/halls/edit/{id}(id=${hall.hallId})}"
+                       class="btn btn-warning btn-sm">Редактировать</a>
+                    <form th:action="@{/halls/delete/{id}(id=${hall.hallId})}"
+                          method="post"
+                          onsubmit="return confirm('Вы уверены, что хотите удалить зал ' + ${hall.hallId} + '?');">
+                        <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(halls)}">
+            <td colspan="7" class="text-center">Нет доступных залов.</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- Статистика -->
+    <div class="stats" th:if="${not #lists.isEmpty(halls)}">
+        <h3>Статистика:</h3>
+        <p>Всего залов: <strong th:text="${#lists.size(halls)}"></strong></p>
+        <p>Общее количество мест: <strong th:text="${#aggregates.sum(halls.![numberSeats])}"></strong></p>
+        <p>Залы с 3D: <strong th:text="${#aggregates.sum(halls.![has3d?1:0])}"></strong></p>
+        <p>Залы с Dolby: <strong th:text="${#aggregates.sum(halls.![hasDolby?1:0])}"></strong></p>
+    </div>
+</div>
+
+<script>
+    // Подтверждение удаления с дополнительной информацией
+    function confirmDelete(form) {
+        const hallId = form.getAttribute('action').split('/').pop();
+        return confirm(`Вы уверены, что хотите удалить зал №${hallId}? Эта операция необратима.`);
+    }
+
+    // Добавляем обработчики для всех форм удаления
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteForms = document.querySelectorAll('form[action*="/delete/"]');
+        deleteForms.forEach(form => {
+            form.onsubmit = function() {
+                return confirmDelete(this);
+            };
+        });
+    });
+</script>
+</body>
+</html>
