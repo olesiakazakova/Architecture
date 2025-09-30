@@ -1,11 +1,10 @@
 package com.example.cinema.cinema_app;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
@@ -27,6 +26,9 @@ public class TicketController {
     @Autowired
     private SessionService sessionService;
 
+    @Autowired
+    private TicketTypeFactory ticketTypeFactory;
+
     @GetMapping
     public String getAllTickets(Model model) {
         List<Ticket> tickets = ticketRepository.findAll();
@@ -34,6 +36,9 @@ public class TicketController {
             System.out.println("Ticket ID: " + ticket.getTicketId());
             System.out.println("Session: " + ticket.getSession());
             System.out.println("User: " + ticket.getUser());
+            if (ticket.getSession() != null) {
+                System.out.println("Session price: " + ticket.getSession().getCost());
+            }
         });
         List<Session> cinemaSessions = sessionRepository.findAll();
         model.addAttribute("cinemaSessions", cinemaSessions);
@@ -49,51 +54,93 @@ public class TicketController {
         return "session/listTickets";
     }
 
-
     @GetMapping("/add")
     public String showAddTicketForm(Model model) {
-
-        model.addAttribute("ticket", new Ticket());
-
-        List<Session> cinemaSessions = sessionRepository.findAll();
-        model.addAttribute("cinemaSessions", cinemaSessions);
-
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-        List<String> formattedStartTimes = cinemaSessions.stream()
-                .map(session -> {
-                    return session.getStartTime() != null ? session.getStartTime().format(timeFormatter) : "Неизвестно";
-                })
-                .collect(Collectors.toList());
-
-        model.addAttribute("formattedStartTimes", formattedStartTimes);
-
-        model.addAttribute("users", userRepository.findAll());
-
-        model.addAttribute("discountTypes", DiscountType.values());
-
-        return "session/addTicket";
+        try {
+            model.addAttribute("cinemaSessions", sessionRepository.findAll());
+            model.addAttribute("users", userRepository.findAll());
+            model.addAttribute("discountTypes", DiscountType.values());
+            return "session/addTicket";
+        } catch (Exception e) {
+            return "redirect:/tickets?error=" + e.getMessage();
+        }
     }
 
     @PostMapping("/add")
-    public String addTicket(@ModelAttribute Ticket ticket) {
-        System.out.println("Received ticket: " + ticket);
+    public String addTicket(@RequestParam("sessionId") UUID sessionId,
+                            @RequestParam("userEmail") String userEmail,
+                            @RequestParam("row") int row,
+                            @RequestParam("seat") int seat,
+                            @RequestParam("discountType") DiscountType discountType) {
 
-        // Проверка на наличие сессии
-        Session session = ticket.getSession(); // Получаем объект Session из Ticket
-        if (session == null || session.getSessionId() == null) {
-            throw new IllegalArgumentException("Session must not be null");
+        try {
+            Session session = sessionRepository.findById(sessionId)
+                    .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+            User user = userRepository.findById(userEmail)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+            Ticket ticket = new Ticket();
+            ticket.setSession(session);
+            ticket.setUser(user);
+            ticket.setRow(row);
+            ticket.setSeat(seat);
+            ticket.setDiscount(discountType);
+            ticket.setTicketTypeFactory(ticketTypeFactory);
+
+            ticketRepository.save(ticket);
+            return "redirect:/tickets";
+
+        } catch (Exception e) {
+            return "redirect:/tickets/add?error=" + e.getMessage();
         }
+    }
 
-        // Проверяем, существует ли сессия в базе данных
-        session = sessionRepository.findById(session.getSessionId()).orElse(null);
-        if (session == null) {
-            throw new IllegalArgumentException("Session not found");
+    @GetMapping("/edit")
+    public String showEditTicketForm(@RequestParam("ticketId") UUID ticketId, Model model) {
+        try {
+            Ticket ticket = ticketRepository.findById(ticketId)
+                    .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
+
+            model.addAttribute("ticket", ticket);
+            model.addAttribute("cinemaSessions", sessionRepository.findAll());
+            model.addAttribute("users", userRepository.findAll());
+            model.addAttribute("discountTypes", DiscountType.values());
+
+            return "session/editTicket";
+        } catch (Exception e) {
+            return "redirect:/tickets?error=" + e.getMessage();
         }
+    }
 
-        ticket.setSession(session);
-        ticketRepository.save(ticket);
+    @PostMapping("/edit")
+    public String editTicket(@RequestParam("ticketId") UUID ticketId,
+                             @RequestParam("sessionId") UUID sessionId,
+                             @RequestParam("userEmail") String userEmail,
+                             @RequestParam("row") int row,
+                             @RequestParam("seat") int seat,
+                             @RequestParam("discountType") DiscountType discountType) {
 
-        return "redirect:/tickets";
+        try {
+            Ticket ticket = ticketRepository.findById(ticketId)
+                    .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
+            Session session = sessionRepository.findById(sessionId)
+                    .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+            User user = userRepository.findById(userEmail)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+            ticket.setSession(session);
+            ticket.setUser(user);
+            ticket.setRow(row);
+            ticket.setSeat(seat);
+            ticket.setDiscount(discountType);
+            ticket.setTicketTypeFactory(ticketTypeFactory);
+
+            ticketRepository.save(ticket);
+            return "redirect:/tickets";
+
+        } catch (Exception e) {
+            return "redirect:/tickets/edit?ticketId=" + ticketId + "&error=" + e.getMessage();
+        }
     }
 
     @PostMapping("/delete")
@@ -105,55 +152,18 @@ public class TicketController {
             return "redirect:/tickets?error=Ticket not found";
         }
     }
-
-    @GetMapping("/edit")
-    public String showEditTicketForm(@RequestParam UUID ticketId, Model model) {
-        Ticket ticket = ticketRepository.findById(ticketId).orElse(null);
-        if (ticket == null) {
-            return "redirect:/tickets?error=Ticket not found";
+    // Вспомогательный метод для конвертации строки в DiscountType
+    private DiscountType mapTicketTypeToDiscountType(String ticketType) {
+        if (ticketType == null) {
+            return DiscountType.NO_DISCOUNT;
         }
 
-        model.addAttribute("ticket", ticket);
-
-        List<Session> cinemaSessions = sessionRepository.findAll();
-        model.addAttribute("cinemaSessions", cinemaSessions);
-
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-        List<String> formattedStartTimes = cinemaSessions.stream()
-                .map(session -> {
-                    return session.getStartTime() != null ? session.getStartTime().format(timeFormatter) : "Неизвестно";
-                })
-                .collect(Collectors.toList());
-
-        model.addAttribute("formattedStartTimes", formattedStartTimes);
-
-        model.addAttribute("users", userRepository.findAll());
-
-        return "session/editTicket"; // Здесь должна быть ваша HTML-страница для редактирования билета
+        switch (ticketType.toLowerCase()) {
+            case "student": return DiscountType.STUDENT_DISCOUNT;
+            case "child": return DiscountType.CHILD_DISCOUNT;
+            case "senior": return DiscountType.SENIOR_DISCOUNT;
+            default: return DiscountType.NO_DISCOUNT;
+        }
     }
-
-    @PostMapping("/edit")
-    public String editTicket(@ModelAttribute Ticket ticket) {
-        System.out.println("Updating ticket: " + ticket);
-
-        // Проверка на наличие сессии
-        Session session = ticket.getSession(); // Получаем объект Session из Ticket
-        if (session == null || session.getSessionId() == null) {
-            throw new IllegalArgumentException("Session must not be null");
-        }
-
-        // Проверяем, существует ли сессия в базе данных
-        session = sessionRepository.findById(session.getSessionId()).orElse(null);
-        if (session == null) {
-            throw new IllegalArgumentException("Session not found");
-        }
-
-        // Устанавливаем сессию в билет
-        ticket.setSession(session);
-        ticketRepository.save(ticket);
-
-        return "redirect:/tickets";
-    }
-
 }
 

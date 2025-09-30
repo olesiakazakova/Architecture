@@ -6,45 +6,61 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+<nav>
+  <a href="/films">Фильмы</a>
+  <a href="/sessions">Сеансы</a>
+  <a href="/tickets">Билеты</a>
+  <a href="/users">Пользователи</a>
+</nav>
+
 <h1>Добавить Билет</h1>
-<form action="#" th:action="@{/tickets/add}" th:object="${ticket}" method="post">
-  <label for="cinemaSession">Сессия:</label>
-  <select id="cinemaSession" th:field="*{session}" required>
-    <option value="" disabled>Выберите сеанс</option>
-    <option th:each="cinemaSession, iterStat : ${cinemaSessions}"
+
+<div th:if="${param.error}">
+  <p style="color: red">Ошибка: <span th:text="${param.error}"></span></p>
+</div>
+
+<form th:action="@{/tickets/add}" method="post">
+  <label for="sessionId">Сеанс:</label>
+  <select id="sessionId" name="sessionId" required>
+    <option value="" disabled selected>Выберите сеанс</option>
+    <option th:each="cinemaSession : ${cinemaSessions}"
             th:value="${cinemaSession.sessionId}"
             th:text="${cinemaSession.film != null ? cinemaSession.film.name : 'Не указано'} +
-                      ' - ' + ${cinemaSession.date != null ? cinemaSession.date : 'Не указано'} +
-                      ' ' + ${formattedStartTimes[iterStat.index] != null ? formattedStartTimes[iterStat.index] : 'Не указано'} +
-                      ' - Зал: ' + ${cinemaSession.hall != null ? cinemaSession.hall.hallId : 'Не указано'}">
+                     ' - ' + ${cinemaSession.date != null ? cinemaSession.date : 'Не указано'} +
+                     ' ' + ${cinemaSession.startTime != null ? #temporals.format(cinemaSession.startTime, 'HH:mm') : 'Не указано'} +
+                     ' - Зал: ' + ${cinemaSession.hall != null ? cinemaSession.hall.hallId : 'Не указано'}">
     </option>
   </select>
 
-  <label for="user">Пользователь:</label>
-  <select id="user" th:field="*{user.email}" required>
+  <label for="userEmail">Пользователь:</label>
+  <select id="userEmail" name="userEmail" required>
     <option value="" disabled selected>Выберите пользователя</option>
     <option th:each="user : ${users}"
             th:value="${user.email}"
-            th:text="${user.name}"></option>
+            th:text="${user.name + ' (' + user.email + ')'}">
+    </option>
   </select>
 
   <label for="row">Ряд:</label>
-  <input type="number" id="row" th:field="*{row}" required />
+  <input type="number" id="row" name="row" required min="1" />
 
   <label for="seat">Место:</label>
-  <input type="number" id="seat" th:field="*{seat}" required />
+  <input type="number" id="seat" name="seat" required min="1" />
 
-<label for="discount">Скидка:</label>
-  <select id="discount" th:field="*{discount}">
+  <label for="discountType">Скидка:</label>
+  <select id="discountType" name="discountType">
     <option value="" disabled selected>Выберите скидку</option>
-    <option th:each="discountType : ${T(com.example.cinema.cinema_app.DiscountType).values()}"
+    <option th:each="discountType : ${discountTypes}"
             th:value="${discountType}"
-            th:text="${discountType.getLabel()}"></option>
+            th:text="${discountType}">
+    </option>
   </select>
 
   <button type="submit">Добавить Билет</button>
 </form>
+
 <a href="/tickets">Вернуться к списку билетов</a>
+
 </body>
 </html>
 

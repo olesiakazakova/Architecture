@@ -13,45 +13,57 @@
   <a href="/users">Пользователи</a>
 </nav>
 <h1>Редактирование билета</h1>
-<form th:action="@{/tickets/edit}" th:object="${ticket}" method="post">
-  <input type="hidden" th:field="*{ticketId}" />
+
+<div th:if="${param.error}">
+  <p style="color: red">Ошибка: <span th:text="${param.error}"></span></p>
+</div>
+
+<form th:action="@{/tickets/edit}" method="post">
+  <input type="hidden" name="ticketId" th:value="${ticket.ticketId}" />
 
   <label>Пользователь:</label>
-  <select id="user" th:field="*{user.email}" required>
-    <option value="" disabled selected>Выберите пользователя</option>
+  <select name="userEmail" required>
+    <option value="" disabled>Выберите пользователя</option>
     <option th:each="user : ${users}"
             th:value="${user.email}"
-            th:text="${user.name}"></option>
+            th:text="${user.name + ' (' + user.email + ')'}"
+            th:selected="${ticket.user != null && user.email == ticket.user.email}">
+    </option>
   </select>
 
   <label>Сеанс:</label>
-  <select id="cinemaSession" th:field="*{session}" required>
+  <select name="sessionId" required>
     <option value="" disabled>Выберите сеанс</option>
-    <option th:each="cinemaSession, iterStat : ${cinemaSessions}"
+    <option th:each="cinemaSession : ${cinemaSessions}"
             th:value="${cinemaSession.sessionId}"
             th:text="${cinemaSession.film != null ? cinemaSession.film.name : 'Не указано'} +
-                      ' - ' + ${cinemaSession.date != null ? cinemaSession.date : 'Не указано'} +
-                      ' ' + ${formattedStartTimes[iterStat.index] != null ? formattedStartTimes[iterStat.index] : 'Не указано'} +
-                      ' - Зал: ' + ${cinemaSession.hall != null ? cinemaSession.hall.hallId : 'Не указано'}">
+                     ' - ' + ${cinemaSession.date != null ? cinemaSession.date : 'Не указано'} +
+                     ' ' + ${cinemaSession.startTime != null ? #temporals.format(cinemaSession.startTime, 'HH:mm') : 'Не указано'} +
+                     ' - Зал: ' + ${cinemaSession.hall != null ? cinemaSession.hall.hallId : 'Не указано'}"
+            th:selected="${ticket.session != null && cinemaSession.sessionId == ticket.session.sessionId}">
     </option>
   </select>
 
   <label>Ряд:</label>
-  <input type="number" th:field="*{row}" required min="1" />
+  <input type="number" name="row" th:value="${ticket.row}" required min="1" />
 
   <label>Место:</label>
-  <input type="number" th:field="*{seat}" required min="1" />
+  <input type="number" name="seat" th:value="${ticket.seat}" required min="1" />
 
   <label>Скидка:</label>
-  <select id="discount" th:field="*{discount}">
-    <option value="" disabled selected>Выберите скидку</option>
-    <option th:each="discountType : ${T(com.example.cinema.cinema_app.DiscountType).values()}"
+  <select name="discountType">
+    <option value="" disabled>Выберите скидку</option>
+    <option th:each="discountType : ${discountTypes}"
             th:value="${discountType}"
-            th:text="${discountType.getLabel()}"></option>
+            th:text="${discountType}"
+            th:selected="${ticket.discount == discountType}">
+    </option>
   </select>
 
   <button type="submit">Сохранить изменения</button>
 </form>
+
+<a href="/tickets">Вернуться к списку билетов</a>
 
 </body>
 </html>

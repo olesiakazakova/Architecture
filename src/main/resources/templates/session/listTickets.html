@@ -22,6 +22,7 @@
     <th>Email Пользователя</th>
     <th>Ряд</th>
     <th>Место</th>
+    <th>Цена</th>
     <th>Скидка</th>
     <th>Действия</th>
   </tr>
@@ -33,6 +34,8 @@
     <td th:text="${ticket.user.email}"></td>
     <td th:text="${ticket.row}"></td>
     <td th:text="${ticket.seat}"></td>
+    <!-- Цена из сеанса -->
+    <td th:text="${ticket.session != null && ticket.session.cost != null ? #numbers.formatDecimal(ticket.session.cost, 1, 'DEFAULT', 2, 'DEFAULT') + ' ₽' : 'Не указана'}"></td>
     <td th:text="${ticket.discount != null ? ticket.discount.label : 'Нет скидки'}"></td>
     <td>
       <a th:href="@{/tickets/edit(ticketId=${ticket.ticketId})}">Редактировать</a>

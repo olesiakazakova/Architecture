@@ -34,8 +34,6 @@ public class Session {
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Ticket> tickets = new ArrayList<>();
 
-    // Конструкторы, геттеры и сеттеры
-
     public Session() {
     }
 
