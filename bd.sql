@@ -131,7 +131,7 @@ GRANT ALL ON TABLE cinema.genres TO postgres;
 
 -- DROP TABLE cinema.halls;
 
-CREATE TABLE cinema.halls ( hall_id int4 NOT NULL, number_seats int4 NOT NULL, CONSTRAINT halls_hall_id_check CHECK ((hall_id > 0)), CONSTRAINT halls_number_seats_check CHECK ((number_seats > 0)), CONSTRAINT halls_pkey PRIMARY KEY (hall_id));
+CREATE TABLE cinema.halls ( hall_id int4 NOT NULL, number_seats int4 NOT NULL, hall_type varchar(20) DEFAULT 'STANDARD'::character varying NOT NULL, description text NULL, has_3d bool DEFAULT false NULL, has_dolby bool DEFAULT false NULL, screen_size float8 DEFAULT 0.0 NULL, CONSTRAINT halls_hall_id_check CHECK ((hall_id > 0)), CONSTRAINT halls_number_seats_check CHECK ((number_seats > 0)), CONSTRAINT halls_pkey PRIMARY KEY (hall_id));
 
 -- Permissions
 
