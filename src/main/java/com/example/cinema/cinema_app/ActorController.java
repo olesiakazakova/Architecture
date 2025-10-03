@@ -1,6 +1,5 @@
 package com.example.cinema.cinema_app;
 
-import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;

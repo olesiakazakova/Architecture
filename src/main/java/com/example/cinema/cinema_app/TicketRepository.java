@@ -1,12 +1,23 @@
 package com.example.cinema.cinema_app;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
-@Repository
 public interface TicketRepository extends JpaRepository<Ticket, UUID> {
-    // Дополнительные методы запроса, если необходимо
-}
 
+    List<Ticket> findBySession_SessionId(UUID sessionId);
+
+    List<Ticket> findBySession_SessionIdOrderByRowAscSeatAsc(UUID sessionId);
+
+    List<Ticket> findBySession_SessionIdAndIsPurchased(UUID sessionId, boolean isPurchased);
+
+    List<Ticket> findBySession_SessionIdAndIsPurchasedFalse(UUID sessionId);
+
+    Optional<Ticket> findBySession_SessionIdAndRowAndSeatAndIsPurchasedTrue(UUID sessionId, int row, int seat);
+
+    Optional<Ticket> findBySession_SessionIdAndRowAndSeat(UUID sessionId, int row, int seat);
+
+    int countBySession_SessionId(UUID sessionId);
+}

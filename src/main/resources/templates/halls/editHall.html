@@ -3,66 +3,264 @@
 <head>
   <meta charset="UTF-8">
   <title>Редактирование зала</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
   <style>
-    .form-group {
-      margin-bottom: 15px;
+    body {
+        background-color: #f8f9fa;
+        padding: 0;
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
+
+    nav {
+        background: linear-gradient(135deg, #343a40, #495057);
+        padding: 1rem 0;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
     }
-    input, select, textarea {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      box-sizing: border-box;
+
+    nav a {
+        color: white;
+        text-decoration: none;
+        padding: 0.5rem 1.5rem;
+        margin: 0 0.5rem;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        font-weight: 500;
     }
-    .checkbox-group {
-      display: flex;
-      gap: 15px;
-      margin: 10px 0;
+
+    nav a:hover {
+        background-color: rgba(255,255,255,0.1);
+        transform: translateY(-2px);
     }
-    .checkbox-item {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-    }
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
-      text-align: center;
-    }
-    .btn-primary {
-      background-color: #007bff;
-      color: white;
-    }
-    .btn-secondary {
-      background-color: #6c757d;
-      color: white;
-    }
+
     .form-container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
+        max-width: 600px;
+        margin: 0 auto;
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 30px;
+        color: #343a40;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 15px;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    label {
+        font-weight: bold;
+        color: #495057;
+        margin-bottom: 10px;
+        display: block;
+        font-size: 1.1rem;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus,
+    textarea:focus {
+        border-color: #6f42c1;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(111,66,193,0.1);
+    }
+
+    input[readonly] {
+        background-color: #f8f9fa;
+        color: #6c757d;
+    }
+
+    .checkbox-group {
+        display: flex;
+        gap: 20px;
+        margin-top: 10px;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+        width: auto;
+        transform: scale(1.2);
+    }
+
+    .checkbox-item label {
+        font-weight: normal;
+        margin-bottom: 0;
+        cursor: pointer;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        font-size: 1rem;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #6f42c1, #59359d);
+        color: white !important;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #59359d, #4a2d82);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(111,66,193,0.3);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #6c757d, #545b62);
+        color: white !important;
+    }
+
+    .btn-secondary:hover {
+        background: linear-gradient(135deg, #545b62, #3d4246);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(108,117,125,0.3);
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .alert {
+        padding: 12px 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+
+    .alert-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .current-hall-info {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        border-left: 4px solid #6c757d;
+    }
+
+    .current-hall-info h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #495057;
+        font-size: 1.1rem;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .info-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 4px;
+    }
+
+    .info-value {
+        font-weight: 600;
+        color: #343a40;
+    }
+
+    .preset-info {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 15px;
+        border-left: 4px solid #6f42c1;
+    }
+
+    .preset-details {
+        margin-top: 10px;
+    }
+
+    .preset-details div {
+        margin-bottom: 8px;
+        padding: 5px 0;
+    }
+
+    @media (max-width: 768px) {
+        .form-container {
+            padding: 20px;
+        }
+
+        nav {
+            text-align: center;
+        }
+
+        nav a {
+            display: inline-block;
+            margin: 5px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-group {
+            flex-direction: column;
+        }
+
+        .checkbox-group {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+        }
     }
   </style>
 </head>
 <body>
 <nav>
   <a href="/films">Фильмы</a>
-  <a href="/halls">Залы</a>
+  <a href="/halls" class="active">Залы</a>
   <a href="/sessions">Сеансы</a>
   <a href="/tickets">Билеты</a>
   <a href="/users">Пользователи</a>
@@ -72,32 +270,65 @@
   <h1>Редактирование зала</h1>
 
   <!-- Сообщения об ошибках -->
-  <div th:if="${error}" class="alert alert-error" style="color: red; margin-bottom: 15px;">
+  <div th:if="${error}" class="alert alert-error">
     <span th:text="${error}"></span>
   </div>
 
+  <!-- Текущая информация о зале -->
+  <div class="current-hall-info">
+    <h3>Текущая конфигурация зала</h3>
+    <div class="info-grid">
+      <div class="info-item">
+        <span class="info-label">ID зала:</span>
+        <span class="info-value" th:text="${hall.hallId}">ID</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Тип зала:</span>
+        <span class="info-value" th:text="${hall.hallType}">Тип</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Количество мест:</span>
+        <span class="info-value" th:text="${hall.numberSeats}">Места</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Размер экрана:</span>
+        <span class="info-value" th:text="${hall.screenSize} + ' м'">Экран</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Оснащение:</span>
+        <span class="info-value">
+                    <span th:if="${hall.has3d}">3D</span>
+                    <span th:if="${hall.has3d and hall.hasDolby}"> + </span>
+                    <span th:if="${hall.hasDolby}">Dolby</span>
+                    <span th:if="${!hall.has3d and !hall.hasDolby}">-</span>
+                </span>
+      </div>
+    </div>
+  </div>
+
   <form th:action="@{/halls/edit/{id}(id=${hall.hallId})}" th:object="${hall}" method="post">
+    <input type="hidden" th:field="*{hallId}" />
 
     <div class="form-group">
-      <label for="hallId">ID зала:</label>
-      <input type="number" id="hallId" th:field="*{hallId}" required readonly style="background-color: #f5f5f5;"/>
+      <label for="hallType">Выберите новый тип зала:</label>
+      <select id="hallType" th:field="*{hallType}" required onchange="showPresetInfo(this.value)">
+        <option value="">-- Выберите тип зала --</option>
+        <option value="STANDARD">🎬 STANDARD - Стандартный кинозал</option>
+        <option value="VIP">⭐ VIP - Премиум комфорт</option>
+        <option value="IMAX">🎞️ IMAX - Технология IMAX</option>
+        <option value="PREMIUM">👑 PREMIUM - Премиальный зал</option>
+        <option value="DELUXE">💎 DELUXE - Улучшенный зал</option>
+      </select>
+
+      <div id="presetInfo" class="preset-info" style="display: none;">
+        <strong>Конфигурация зала:</strong>
+        <div id="presetDetails" class="preset-details"></div>
+      </div>
     </div>
 
     <div class="form-group">
       <label for="numberSeats">Количество мест:</label>
       <input type="number" id="numberSeats" th:field="*{numberSeats}" min="1" required>
-    </div>
-
-    <div class="form-group">
-      <label for="hallType">Тип зала:</label>
-      <select id="hallType" th:field="*{hallType}" required>
-        <option value="">Выберите тип зала</option>
-        <option value="STANDARD">STANDARD</option>
-        <option value="VIP">VIP</option>
-        <option value="IMAX">IMAX</option>
-        <option value="PREMIUM">PREMIUM</option>
-        <option value="DELUXE">DELUXE</option>
-      </select>
     </div>
 
     <div class="form-group">
@@ -110,11 +341,11 @@
       <div class="checkbox-group">
         <div class="checkbox-item">
           <input type="checkbox" id="has3d" th:field="*{has3d}">
-          <label for="has3d" style="display: inline; font-weight: normal;">3D</label>
+          <label for="has3d">3D</label>
         </div>
         <div class="checkbox-item">
           <input type="checkbox" id="hasDolby" th:field="*{hasDolby}">
-          <label for="hasDolby" style="display: inline; font-weight: normal;">Dolby Sound</label>
+          <label for="hasDolby">Dolby Sound</label>
         </div>
       </div>
     </div>
@@ -133,18 +364,70 @@
 </div>
 
 <script>
-  // Предзаполнение выпадающего списка типа зала
-  document.addEventListener('DOMContentLoaded', function() {
-    const hallType = document.getElementById('hallType');
-    const currentType = hallType.getAttribute('th:field');
+  const presets = {
+      'STANDARD': {
+          name: 'STANDARD',
+          seats: '100 мест',
+          screen: 'Экран: 10м',
+          features: 'Оснащение: без 3D, без Dolby',
+          description: 'Стандартный кинозал'
+      },
+      'VIP': {
+          name: 'VIP',
+          seats: '50 мест',
+          screen: 'Экран: 12м',
+          features: 'Оснащение: 3D + Dolby Sound',
+          description: 'VIP зал с повышенным комфортом'
+      },
+      'IMAX': {
+          name: 'IMAX',
+          seats: '200 мест',
+          screen: 'Экран: 22м',
+          features: 'Оснащение: 3D + Dolby Sound',
+          description: 'Зал с технологией IMAX'
+      },
+      'PREMIUM': {
+          name: 'PREMIUM',
+          seats: '80 мест',
+          screen: 'Экран: 15м',
+          features: 'Оснащение: 3D + Dolby Sound',
+          description: 'Премиальный кинозал'
+      },
+      'DELUXE': {
+          name: 'DELUXE',
+          seats: '120 мест',
+          screen: 'Экран: 18м',
+          features: 'Оснащение: 3D',
+          description: 'Улучшенный зал Deluxe'
+      }
+  };
 
-    // Thymeleaf автоматически установит значение через th:field
-    // Этот скрипт для отладки
-    console.log('Current hall type:', currentType);
+  function showPresetInfo(hallType) {
+      const infoDiv = document.getElementById('presetInfo');
+      const detailsDiv = document.getElementById('presetDetails');
+
+      if (hallType && presets[hallType]) {
+          const preset = presets[hallType];
+          detailsDiv.innerHTML = `
+              <div>🎯 <strong>${preset.name}</strong></div>
+              <div>🪑 ${preset.seats}</div>
+              <div>📺 ${preset.screen}</div>
+              <div>⚡ ${preset.features}</div>
+              <div>📝 ${preset.description}</div>
+          `;
+          infoDiv.style.display = 'block';
+      } else {
+          infoDiv.style.display = 'none';
+      }
+  }
+
+  // Показать информацию при загрузке, если уже выбран тип
+  document.addEventListener('DOMContentLoaded', function() {
+      const hallTypeSelect = document.getElementById('hallType');
+      if (hallTypeSelect.value) {
+          showPresetInfo(hallTypeSelect.value);
+      }
   });
 </script>
-
 </body>
 </html>
-
-

@@ -5,10 +5,8 @@ import org.springframework.ui.Model;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
 import java.util.List;
 import java.util.UUID;
-
 
 @Controller
 @RequestMapping("/sessions")
@@ -49,8 +47,24 @@ public class SessionController {
     }
 
     @PostMapping("/add")
-    public String createSession(@ModelAttribute Session session) {
-        sessionRepository.save(session);
+    public String createSession(@ModelAttribute Session session, RedirectAttributes redirectAttributes) {
+        try {
+            System.out.println("Creating new session with hall: " + session.getHall().getHallId());
+            System.out.println("Hall seats: " + session.getHall().getNumberSeats());
+
+            Session savedSession = sessionService.save(session);
+
+            List<Ticket> tickets = sessionService.getTicketsForSession(savedSession.getSessionId());
+            System.out.println("Tickets created: " + tickets.size());
+
+            redirectAttributes.addFlashAttribute("success",
+                    "Сеанс успешно создан! Создано " + tickets.size() + " билетов.");
+        } catch (Exception e) {
+            System.err.println("Error creating session: " + e.getMessage());
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error",
+                    "Ошибка при создании сеанса: " + e.getMessage());
+        }
         return "redirect:/sessions";
     }
 

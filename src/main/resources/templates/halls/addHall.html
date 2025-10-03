@@ -1,98 +1,220 @@
 <!DOCTYPE html>
-<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Добавить зал</title>
-    <link rel="stylesheet" href="/style.css">
+    <title>Добавить новый зал</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
     <style>
+        body {
+          background-color: #f8f9fa;
+          padding: 0;
+          margin: 0;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        nav {
+          background: linear-gradient(135deg, #343a40, #495057);
+          padding: 1rem 0;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          margin-bottom: 30px;
+        }
+
+        nav a {
+          color: white;
+          text-decoration: none;
+          padding: 0.5rem 1.5rem;
+          margin: 0 0.5rem;
+          border-radius: 5px;
+          transition: all 0.3s ease;
+          font-weight: 500;
+        }
+
+        nav a:hover {
+          background-color: rgba(255,255,255,0.1);
+          transform: translateY(-2px);
+        }
+
         .form-container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
+          max-width: 600px;
+          margin: 0 auto;
+          background: white;
+          padding: 30px;
+          border-radius: 10px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
+
+        h1 {
+          text-align: center;
+          margin-bottom: 30px;
+          color: #343a40;
+          border-bottom: 2px solid #e9ecef;
+          padding-bottom: 15px;
+        }
+
         .form-group {
-            margin-bottom: 20px;
+          margin-bottom: 25px;
         }
+
         label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            font-size: 16px;
+          font-weight: bold;
+          color: #495057;
+          margin-bottom: 10px;
+          display: block;
+          font-size: 1.1rem;
         }
+
         select {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 16px;
+          width: 100%;
+          padding: 12px;
+          border: 1px solid #ced4da;
+          border-radius: 5px;
+          font-size: 1rem;
+          transition: border-color 0.3s;
+          background-color: white;
         }
-        .btn-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 25px;
+
+        select:focus {
+          border-color: #6f42c1;
+          outline: none;
+          box-shadow: 0 0 0 3px rgba(111,66,193,0.1);
         }
+
         .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-            font-size: 16px;
-            font-weight: bold;
+          padding: 12px 24px;
+          border-radius: 5px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          border: none;
+          text-decoration: none;
+          display: inline-block;
+          text-align: center;
+          font-size: 1rem;
         }
+
         .btn-primary {
-            background-color: #007bff;
-            color: white;
+          background: linear-gradient(135deg, #6f42c1, #59359d);
+          color: white !important;
         }
+
         .btn-primary:hover {
-            background-color: #0056b3;
+          background: linear-gradient(135deg, #59359d, #4a2d82);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(111,66,193,0.3);
         }
+
         .btn-secondary {
-            background-color: #6c757d;
-            color: white;
+          background: linear-gradient(135deg, #6c757d, #545b62);
+          color: white !important;
         }
+
         .btn-secondary:hover {
-            background-color: #545b62;
+          background: linear-gradient(135deg, #545b62, #3d4246);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(108,117,125,0.3);
         }
+
+        .btn-group {
+          display: flex;
+          gap: 15px;
+          justify-content: center;
+          margin-top: 30px;
+          padding-top: 20px;
+          border-top: 1px solid #e9ecef;
+        }
+
         .alert {
-            padding: 12px;
-            margin-bottom: 20px;
-            border-radius: 6px;
-            border: 1px solid;
+          padding: 12px 15px;
+          border-radius: 5px;
+          margin-bottom: 20px;
         }
+
         .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border-color: #f5c6cb;
+          background-color: #f8d7da;
+          color: #721c24;
+          border: 1px solid #f5c6cb;
         }
+
         .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border-color: #c3e6cb;
+          background-color: #d4edda;
+          color: #155724;
+          border: 1px solid #c3e6cb;
         }
+
         .preset-info {
-            margin-top: 10px;
-            padding: 12px;
-            background-color: #e7f3ff;
-            border: 1px solid #b3d9ff;
-            border-radius: 6px;
-            font-size: 14px;
+          background: #f8f9fa;
+          padding: 15px;
+          border-radius: 8px;
+          margin-top: 15px;
+          border-left: 4px solid #6f42c1;
         }
+
         .preset-details {
-            margin-top: 5px;
-            font-size: 13px;
-            color: #666;
+          margin-top: 10px;
+        }
+
+        .preset-details div {
+          margin-bottom: 8px;
+          padding: 5px 0;
+        }
+
+        .info-box {
+          background: #e9ecef;
+          padding: 20px;
+          border-radius: 8px;
+          margin-top: 30px;
+          border-left: 4px solid #6c757d;
+        }
+
+        .info-box p {
+          margin-bottom: 10px;
+          font-weight: 500;
+          color: #495057;
+        }
+
+        .info-box ul {
+          margin-left: 20px;
+          color: #495057;
+        }
+
+        .info-box li {
+          margin-bottom: 8px;
+          line-height: 1.4;
+        }
+
+        .info-box strong {
+          color: #343a40;
+        }
+
+        @media (max-width: 768px) {
+          .form-container {
+            padding: 20px;
+          }
+
+          nav {
+            text-align: center;
+          }
+
+          nav a {
+            display: inline-block;
+            margin: 5px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+          }
+
+          .btn-group {
+            flex-direction: column;
+          }
+
+          h1 {
+            font-size: 1.5rem;
+          }
         }
     </style>
 </head>
 <body>
 <nav>
     <a href="/films">Фильмы</a>
-    <a href="/halls">Залы</a>
+    <a href="/halls" class="active">Залы</a>
     <a href="/sessions">Сеансы</a>
     <a href="/tickets">Билеты</a>
     <a href="/users">Пользователи</a>
@@ -136,9 +258,9 @@
         </div>
     </form>
 
-    <div style="margin-top: 30px; padding: 15px; background-color: #f8f9fa; border-radius: 6px;">
+    <div class="info-box">
         <p>Каждый тип зала автоматически создается с предустановленной конфигурацией:</p>
-        <ul style="margin-left: 20px;">
+        <ul>
             <li><strong>STANDARD</strong> - 100 мест, без 3D, экран 10м</li>
             <li><strong>VIP</strong> - 50 мест, 3D + Dolby, экран 12м</li>
             <li><strong>IMAX</strong> - 200 мест, 3D + Dolby, экран 22м</li>
@@ -214,6 +336,5 @@
         }
     });
 </script>
-
 </body>
 </html>

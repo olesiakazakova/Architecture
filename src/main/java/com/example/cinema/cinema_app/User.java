@@ -19,7 +19,6 @@ public class User {
     @Size(max = 100)
     private String name;
 
-    @NotBlank
     @Size(min = 8, max = 100)
     private String password;
 

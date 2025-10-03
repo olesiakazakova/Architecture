@@ -7,4 +7,6 @@ import java.util.Optional;
 @Repository
 public interface FilmsGenresRepository extends JpaRepository<FilmsGenres, Long> {
     Optional<FilmsGenres> findByGenreAndFilm(Genre genre, Film film);
+
+    void deleteByGenre(Genre genre);
 }

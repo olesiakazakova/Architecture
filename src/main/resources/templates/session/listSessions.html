@@ -3,7 +3,381 @@
 <head>
   <meta charset="UTF-8">
   <title>Список сеансов</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      padding: 0;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    nav {
+      background: linear-gradient(135deg, #343a40, #495057);
+      padding: 1rem 0;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1.5rem;
+      margin: 0 0.5rem;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+
+    nav a:hover {
+      background-color: rgba(255,255,255,0.1);
+      transform: translateY(-2px);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #e9ecef;
+    }
+
+    h1 {
+      color: #343a40;
+      margin: 0;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6f42c1, #59359d);
+      color: white !important;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #59359d, #4a2d82);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(111,66,193,0.3);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.875rem;
+    }
+
+    .btn-edit {
+      background: linear-gradient(135deg, #6f42c1, #59359d);
+      color: white !important;
+    }
+
+    .btn-edit:hover {
+      background: linear-gradient(135deg, #59359d, #4a2d82);
+      transform: translateY(-2px);
+    }
+
+    .btn-delete {
+      background: linear-gradient(135deg, #dc3545, #c82333);
+      color: white !important;
+    }
+
+    .btn-delete:hover {
+      background: linear-gradient(135deg, #c82333, #a71e2a);
+      transform: translateY(-2px);
+    }
+
+    .sessions-table {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .sessions-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .sessions-table th {
+      background: linear-gradient(135deg, #6f42c1, #59359d);
+      color: white;
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+      border: none;
+    }
+
+    .sessions-table th a {
+      color: white;
+      text-decoration: none;
+    }
+
+    .sessions-table th a:hover {
+      text-decoration: underline;
+    }
+
+    .sessions-table td {
+      padding: 15px;
+      border-bottom: 1px solid #e9ecef;
+      vertical-align: top;
+    }
+
+    .sessions-table tr:hover {
+      background-color: #f8f9fa;
+    }
+
+    .sessions-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #6c757d;
+    }
+
+    .empty-state h3 {
+      margin-bottom: 10px;
+      color: #495057;
+    }
+
+    .film-title {
+      font-weight: 600;
+      color: #343a40;
+    }
+
+    .session-date {
+      font-weight: 600;
+      color: #495057;
+    }
+
+    .session-time {
+      background: #6f42c1;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .session-cost {
+      font-weight: 600;
+      color: #28a745;
+      font-size: 1.1rem;
+    }
+
+    .hall-badge {
+      background: #e9ecef;
+      color: #495057;
+      padding: 6px 12px;
+      border-radius: 15px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .stats-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      border-left: 4px solid #6f42c1;
+    }
+
+    .stats-card h3 {
+      margin: 0 0 10px 0;
+      color: #343a40;
+      font-size: 1.2rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #6f42c1;
+      margin: 0;
+    }
+
+    .stat-label {
+      color: #6c757d;
+      font-size: 0.9rem;
+      margin: 5px 0 0 0;
+    }
+
+    .filter-section {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 25px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .filter-section h3 {
+      margin: 0 0 15px 0;
+      color: #495057;
+      font-size: 1.2rem;
+    }
+
+    .filter-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      align-items: end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filter-group label {
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 5px;
+    }
+
+    .filter-group select,
+    .filter-group input {
+      padding: 8px 12px;
+      border: 1px solid #ced4da;
+      border-radius: 5px;
+    }
+
+    @media (max-width: 1200px) {
+      .container {
+        padding: 0 15px;
+      }
+
+      .sessions-table {
+        overflow-x: auto;
+      }
+
+      .sessions-table table {
+        min-width: 1000px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      nav {
+        text-align: center;
+      }
+
+      nav a {
+        display: inline-block;
+        margin: 5px;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+      }
+
+      .page-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+      }
+
+      .actions {
+        justify-content: center;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .filter-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .btn-edit {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+  }
+
+  .btn-delete {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .filter-row {
+    display: flex;
+    gap: 15px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+  }
+
+  .filter-group label {
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+
+  .filter-group select,
+  .filter-group input {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  </style>
 </head>
 <body>
 <nav>
@@ -13,39 +387,242 @@
   <a href="/users">Пользователи</a>
 </nav>
 
-<h1>Список сеансов</h1>
-<a class="add-button" th:href="@{/sessions/add}">Добавить сеанс</a>
+<div class="container">
+  <div class="page-header">
+    <h1>Список сеансов</h1>
+    <a class="btn btn-primary" th:href="@{/sessions/add}">Добавить сеанс</a>
+  </div>
 
-<table>
-  <thead>
-  <tr>
-    <th><a th:href="@{/films}">Фильм</a></th>
-    <th><a th:href="@{/halls}">Зал</a></th>
-    <th>Дата</th>
-    <th>Время начала</th>
-    <th>Стоимость</th>
-    <th>Действия</th>
-  </tr>
-  </thead>
-  <tbody>
-  <tr th:each="sess : ${sessions}">
-    <td th:text="${sess.film.name}"></td>
-    <td th:text="${sess.hall.hallId}"></td>
-    <td th:text="${sess.date}"></td>
-    <td th:text="${sess.startTime}"></td>
-    <td th:text="${sess.cost}"></td>
-    <td>
-      <a th:href="@{/sessions/edit/{sessionId}(sessionId=${sess.sessionId})}">Редактировать</a>
-      <form th:action="@{/sessions/delete/{id}(id=${sess.sessionId})}" method="post" onsubmit="return confirm('Вы уверены, что хотите удалить этот сеанс?');">
-        <input type="hidden" name="sessionId" th:value="${sess.sessionId}"/>
-        <button type="submit">Удалить</button>
-      </form>
-    </td>
-  </tr>
-  <tr th:if="${#lists.isEmpty(sessions)}">
-    <td colspan="6">Нет доступных сеансов.</td>
-  </tr>
-  </tbody>
-</table>
+  <!-- Статистика -->
+  <div class="stats-card">
+    <h3>Статистика сеансов</h3>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <p class="stat-value" th:text="${#lists.size(sessions)}">0</p>
+        <p class="stat-label">Всего сеансов</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-value" th:text="${films != null ? #lists.size(films) : 0}">0</p>
+        <p class="stat-label">Доступных фильмов</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-value" th:text="${halls != null ? #lists.size(halls) : 0}">0</p>
+        <p class="stat-label">Количество залов</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Фильтры -->
+  <div class="filter-section">
+    <h3>Фильтры</h3>
+    <div class="filter-row">
+      <div class="filter-group">
+        <label for="filmFilter">Фильм:</label>
+        <select id="filmFilter">
+          <option value="">Все фильмы</option>
+          <option th:each="film : ${films}"
+                  th:value="${film.filmId}"
+                  th:text="${film.name}"></option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="hallFilter">Зал:</label>
+        <select id="hallFilter">
+          <option value="">Все залы</option>
+          <option th:each="hall : ${halls}"
+                  th:value="${hall.hallId}"
+                  th:text="'Зал ' + ${hall.hallId}"></option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="dateFilter">Дата:</label>
+        <input type="date" id="dateFilter">
+      </div>
+      <div class="filter-group">
+        <button class="btn btn-primary" onclick="applyFilters()">Применить фильтры</button>
+        <button class="btn btn-secondary" onclick="resetFilters()">Сбросить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Таблица сеансов -->
+  <div class="sessions-table">
+    <table>
+      <thead>
+      <tr>
+        <th><a th:href="@{/films}">Фильм</a></th>
+        <th><a th:href="@{/halls}">Зал</a></th>
+        <th>Дата</th>
+        <th>Время начала</th>
+        <th>Стоимость</th>
+        <th>Действия</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="sess : ${sessions}" class="session-row">
+        <td>
+          <div class="film-title" th:text="${sess.film.name}">Название фильма</div>
+        </td>
+        <td>
+          <span class="hall-badge" th:text="'Зал ' + ${sess.hall.hallId}">Зал</span>
+        </td>
+        <td th:text="${#dates.format(sess.date, 'dd.MM.yyyy')}">Дата</td>
+        <td>
+          <span class="session-time" th:text="${sess.startTime}">Время</span>
+        </td>
+        <td>
+          <div class="session-cost" th:text="${sess.cost} + ' руб.'">Стоимость</div>
+        </td>
+        <td>
+          <div class="actions" style="display: flex; gap: 8px; flex-wrap: nowrap;">
+            <a class="btn btn-edit btn-sm" th:href="@{/sessions/edit/{sessionId}(sessionId=${sess.sessionId})}">Редактировать</a>
+            <form th:action="@{/sessions/delete/{id}(id=${sess.sessionId})}" method="post" style="display: inline; margin: 0;">
+              <input type="hidden" name="sessionId" th:value="${sess.sessionId}"/>
+              <button type="submit" class="btn btn-delete btn-sm" onclick="return confirm('Вы уверены, что хотите удалить этот сеанс?');">Удалить</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      <tr th:if="${#lists.isEmpty(sessions)}">
+        <td colspan="6">
+          <div class="empty-state">
+            <h3>Нет доступных сеансов</h3>
+            <p>Добавьте первый сеанс в расписание</p>
+            <a class="btn btn-primary" th:href="@{/sessions/add}">Добавить сеанс</a>
+          </div>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  function applyFilters() {
+    const filmFilter = document.getElementById('filmFilter').value;
+    const hallFilter = document.getElementById('hallFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
+
+    console.log('Applying filters:', {
+      filmFilter: filmFilter,
+      hallFilter: hallFilter,
+      dateFilter: dateFilter
+    });
+
+    const rows = document.querySelectorAll('.session-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+      // Получаем данные из текстового содержимого
+      const filmName = row.querySelector('.film-title').textContent.trim();
+      const hallText = row.querySelector('.hall-badge').textContent.trim();
+      const dateText = row.cells[2].textContent.trim(); // Дата из третьей ячейки
+
+      // Извлекаем ID зала из текста (убираем "Зал ")
+      const hallIdFromText = hallText.replace('Зал ', '');
+
+      // Преобразуем дату в формат yyyy-MM-dd для сравнения
+      const dateParts = dateText.split('.');
+      const formattedDate = dateParts.length === 3
+        ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`
+        : '';
+
+      console.log('Row data:', {
+        filmName: filmName,
+        hallId: hallIdFromText,
+        date: formattedDate
+      });
+
+      let showRow = true;
+
+      // Фильтрация по фильму - сравниваем названия
+      if (filmFilter) {
+        const selectedFilmOption = document.querySelector(`#filmFilter option[value="${filmFilter}"]`);
+        const selectedFilmName = selectedFilmOption ? selectedFilmOption.textContent.trim() : '';
+        if (selectedFilmName && filmName !== selectedFilmName) {
+          showRow = false;
+        }
+      }
+
+      // Фильтрация по залу - сравниваем ID
+      if (hallFilter && hallIdFromText !== hallFilter) {
+        showRow = false;
+      }
+
+      // Фильтрация по дате
+      if (dateFilter && formattedDate !== dateFilter) {
+        showRow = false;
+      }
+
+      if (showRow) {
+        row.style.display = '';
+        visibleCount++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    console.log('Visible rows:', visibleCount);
+    updateEmptyState(visibleCount);
+  }
+
+  function resetFilters() {
+    document.getElementById('filmFilter').value = '';
+    document.getElementById('hallFilter').value = '';
+    document.getElementById('dateFilter').value = '';
+
+    const rows = document.querySelectorAll('.session-row');
+    rows.forEach(row => {
+      row.style.display = '';
+    });
+
+    updateEmptyState(rows.length);
+  }
+
+  function updateEmptyState(visibleCount) {
+    const emptyStateRow = document.querySelector('.empty-state')?.closest('tr');
+    const tbody = document.querySelector('tbody');
+    const sessionRows = tbody.querySelectorAll('.session-row');
+
+    const hasSessions = sessionRows.length > 0;
+
+    if (emptyStateRow) {
+      if (visibleCount === 0 && hasSessions) {
+        emptyStateRow.style.display = '';
+        const emptyStateText = emptyStateRow.querySelector('h3');
+        const emptyStateDesc = emptyStateRow.querySelector('p');
+        if (emptyStateText) emptyStateText.textContent = 'Сеансы не найдены';
+        if (emptyStateDesc) emptyStateDesc.textContent = 'Попробуйте изменить параметры фильтрации';
+      } else if (!hasSessions) {
+        emptyStateRow.style.display = '';
+        const emptyStateText = emptyStateRow.querySelector('h3');
+        const emptyStateDesc = emptyStateRow.querySelector('p');
+        if (emptyStateText) emptyStateText.textContent = 'Нет доступных сеансов';
+        if (emptyStateDesc) emptyStateDesc.textContent = 'Добавьте первый сеанс в расписание';
+      } else {
+        emptyStateRow.style.display = 'none';
+      }
+    }
+  }
+
+  // Автоматическое применение фильтров при изменении значений
+  document.addEventListener('DOMContentLoaded', function() {
+    const filmFilter = document.getElementById('filmFilter');
+    const hallFilter = document.getElementById('hallFilter');
+    const dateFilter = document.getElementById('dateFilter');
+
+    if (filmFilter) filmFilter.addEventListener('change', applyFilters);
+    if (hallFilter) hallFilter.addEventListener('change', applyFilters);
+    if (dateFilter) dateFilter.addEventListener('change', applyFilters);
+
+    // Добавим отладочную информацию
+    console.log('Page loaded, sessions count:', document.querySelectorAll('.session-row').length);
+    console.log('Film options:', document.querySelectorAll('#filmFilter option').length);
+    console.log('Hall options:', document.querySelectorAll('#hallFilter option').length);
+
+    const initialCount = document.querySelectorAll('.session-row').length;
+    updateEmptyState(initialCount);
+  });
+</script>
 </body>
 </html>

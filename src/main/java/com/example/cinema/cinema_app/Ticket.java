@@ -2,14 +2,12 @@ package com.example.cinema.cinema_app;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.GenericGenerator;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
 @Table(name = "tickets")
-public class Ticket {
+public class Ticket implements Copyable {
 
     @Id
     @GeneratedValue(generator = "UUID")
@@ -21,7 +19,7 @@ public class Ticket {
     private Session session;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 
     private int row;
@@ -30,91 +28,76 @@ public class Ticket {
     @Enumerated(EnumType.STRING)
     private DiscountType discount;
 
-    // Добавляем transient поле для фабрики
+    @Column(name = "is_purchased", nullable = false)
+    private boolean isPurchased = false;
+
     @Transient
     private TicketTypeFactory ticketTypeFactory;
 
-    // Метод для получения типа билета
+    public Ticket() {}
+
+    public Ticket(Session session, int row, int seat) {
+        this.session = session;
+        this.row = row;
+        this.seat = seat;
+        this.discount = DiscountType.NO_DISCOUNT;
+        this.isPurchased = false;
+        this.user = null;
+    }
+
+    public UUID getTicketId() { return ticketId; }
+    public void setTicketId(UUID ticketId) { this.ticketId = ticketId; }
+
+    public Session getSession() { return session; }
+    public void setSession(Session session) { this.session = session; }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+
+    public int getRow() { return row; }
+    public void setRow(int row) { this.row = row; }
+
+    public int getSeat() { return seat; }
+    public void setSeat(int seat) { this.seat = seat; }
+
+    public DiscountType getDiscount() { return discount; }
+    public void setDiscount(DiscountType discount) { this.discount = discount; }
+
+    public boolean getIsPurchased() { return isPurchased; }
+    public void setIsPurchased(boolean isPurchased) { this.isPurchased = isPurchased; }
+
+    public TicketTypeFactory getTicketTypeFactory() { return ticketTypeFactory; }
+    public void setTicketTypeFactory(TicketTypeFactory ticketTypeFactory) {
+        this.ticketTypeFactory = ticketTypeFactory;
+    }
+
     public TicketType getTicketType() {
         if (ticketTypeFactory == null) {
-            // Можно создать фабрику здесь или бросить исключение
             throw new IllegalStateException("TicketTypeFactory not set");
         }
         return ticketTypeFactory.createTicketType(this.discount);
     }
 
-    // Метод для получения итоговой цены
     public BigDecimal getFinalPrice() {
         if (session == null || session.getCost() == null) {
             return BigDecimal.ZERO;
         }
-
         TicketType ticketType = getTicketType();
         return ticketType.calculatePrice(session.getCost());
     }
 
-    // Дополнительный метод для получения информации
-    public void displayTicketInfo() {
-        TicketType ticketType = getTicketType();
-        ticketType.displayTicketInfo();
-    }
-
-    // Сеттер для фабрики
-    public void setTicketTypeFactory(TicketTypeFactory ticketTypeFactory) {
-        this.ticketTypeFactory = ticketTypeFactory;
-    }
-
-    // Геттеры и сеттеры
-    public UUID getTicketId() {
-        return ticketId;
-    }
-
-    public void setTicketId(UUID ticketId) {
-        this.ticketId = ticketId;
-    }
-
-    public Session getSession() {
-        return session;
-    }
-
-    public void setSession(Session session) {
-        this.session = session;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public int getRow() {
-        return row;
-    }
-
-    public void setRow(int row) {
-        this.row = row;
-    }
-
-    public int getSeat() {
-        return seat;
-    }
-
-    public void setSeat(int seat) {
-        this.seat = seat;
-    }
-
-    public DiscountType getDiscount() {
-        return discount;
-    }
-
-    public void setDiscount(DiscountType discount) {
-        this.discount = discount;
-    }
-
     public UUID getSessionId() {
         return session != null ? session.getSessionId() : null;
+    }
+
+    @Override
+    public Ticket copy() {
+        Ticket copy = new Ticket();
+        copy.session = this.session;
+        copy.discount = this.discount;
+        copy.isPurchased = this.isPurchased;
+        copy.ticketTypeFactory = this.ticketTypeFactory;
+        return copy;
     }
 }
 

@@ -5,16 +5,11 @@ import java.math.BigDecimal;
 public class ChildTicketType implements TicketType {
     @Override
     public BigDecimal calculatePrice(BigDecimal basePrice) {
-        return basePrice.multiply(new BigDecimal("0.5")); // 50% скидка
+        return basePrice.multiply(new BigDecimal("0.5"));
     }
 
     @Override
     public String getTicketTypeName() {
         return "Детский билет";
-    }
-
-    @Override
-    public void displayTicketInfo() {
-        System.out.println("Детский билет - скидка 50%");
     }
 }

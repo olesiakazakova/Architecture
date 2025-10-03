@@ -1,15 +1,13 @@
 package com.example.cinema.cinema_app;
 
 import jakarta.persistence.*;
-
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "actors")
 public class Actor {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)// значения этого поля будут автоматически генерироваться с использованием последовательности
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @SequenceGenerator(name = "actor_seq", sequenceName = "actor_sequence", allocationSize = 1)
     private Long actorId;
 

@@ -12,9 +12,4 @@ public class RegularTicketType implements TicketType {
     public String getTicketTypeName() {
         return "Обычный билет";
     }
-
-    @Override
-    public void displayTicketInfo() {
-        System.out.println("Обычный билет - полная стоимость");
-    }
 }

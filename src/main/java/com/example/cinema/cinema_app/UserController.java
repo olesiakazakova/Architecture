@@ -1,9 +1,7 @@
 package com.example.cinema.cinema_app;
 
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -47,9 +45,35 @@ public class UserController {
 
     @PostMapping("/edit")
     @Transactional
-    public String editUser(@ModelAttribute User user, RedirectAttributes redirectAttributes) {
-        userRepository.save(user);
-        redirectAttributes.addFlashAttribute("success", "Пользователь успешно обновлен!");
+    public String editUser(@ModelAttribute User user,
+                           RedirectAttributes redirectAttributes) {
+
+        try {
+            System.out.println("Получен пользователь: " + user.getEmail() + ", имя: " + user.getName());
+
+            User existingUser = userRepository.findByEmail(user.getEmail());
+            if (existingUser == null) {
+                redirectAttributes.addFlashAttribute("error", "Пользователь не найден!");
+                return "redirect:/users";
+            }
+
+            existingUser.setName(user.getName());
+
+            if (user.getPassword() != null && !user.getPassword().trim().isEmpty()) {
+                existingUser.setPassword(user.getPassword());
+                System.out.println("Пароль обновлен (без хеширования)");
+            }
+
+            userRepository.save(existingUser);
+            System.out.println("Пользователь сохранен");
+            redirectAttributes.addFlashAttribute("success", "Пользователь успешно обновлен!");
+
+        } catch (Exception e) {
+            System.out.println("Ошибка: " + e.getMessage());
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Ошибка при обновлении пользователя: " + e.getMessage());
+        }
+
         return "redirect:/users";
     }
 

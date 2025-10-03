@@ -2,57 +2,263 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
   <title>Редактировать фильм</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      padding: 20px;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #343a40;
+      border-bottom: 2px solid #e9ecef;
+      padding-bottom: 15px;
+    }
+
+    .form-section {
+      margin-bottom: 25px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #007bff;
+    }
+
+    .form-section h3 {
+      margin-top: 0;
+      color: #495057;
+      font-size: 1.2rem;
+      margin-bottom: 15px;
+    }
+
+    label {
+      font-weight: bold;
+      color: #495057;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ced4da;
+      border-radius: 5px;
+      margin-bottom: 5px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="date"]:focus,
+    textarea:focus {
+      border-color: #007bff;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .checkbox-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      padding: 8px;
+      background: white;
+      border-radius: 5px;
+      border: 1px solid #e9ecef;
+    }
+
+    .checkbox-item input {
+      margin-right: 8px;
+    }
+
+    .checkbox-item:hover {
+      background: #e9ecef;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #007bff, #0056b3);
+      color: white !important;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #0056b3, #004085);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,123,255,0.3);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #6c757d, #545b62);
+      color: white !important;
+    }
+
+    .btn-secondary:hover {
+      background: linear-gradient(135deg, #545b62, #3d4246);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(108,117,125,0.3);
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e9ecef;
+    }
+
+    .error-message {
+      color: #dc3545;
+      font-size: 0.875rem;
+      margin-top: 5px;
+      display: block;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+
+      .checkbox-group {
+        grid-template-columns: 1fr;
+      }
+
+      .form-actions {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .form-actions .btn {
+        width: 100%;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+    }
+  </style>
 </head>
 <body>
-<h1>Редактировать фильм</h1>
-<form th:action="@{/films/edit}" th:object="${film}" method="post">
-  <input type="hidden" th:field="*{filmId}" />
-  <div>
-    <label for="name">Название:</label>
-    <input type="text" id="name" th:field="*{name}" required/>
-    <span th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Ошибка в названии</span>
-  </div>
-  <div>
-    <label for="description">Описание:</label>
-    <textarea id="description" th:field="*{description}" required></textarea>
-    <span th:if="${#fields.hasErrors('description')}" th:errors="*{description}">Ошибка в описании</span>
-  </div>
-  <div>
-    <label for="duration">Длительность (мин):</label>
-    <input type="number" id="duration" th:field="*{duration}" required/>
-    <span th:if="${#fields.hasErrors('duration')}" th:errors="*{duration}">Ошибка в длительности</span>
-  </div>
-  <div>
-    <label for="releaseDate">Дата выпуска:</label>
-    <input type="date" id="releaseDate" th:field="*{releaseDate}" required />
-    <span th:if="${#fields.hasErrors('releaseDate')}" th:errors="*{releaseDate}">Ошибка в дате выпуска</span>
-  </div>
-  <div>
-    <label>Жанры:</label>
-    <div th:each="genre : ${allGenres}">
-      <input type="checkbox" th:field="*{genres}" th:value="${genre.genreId}" /> <span th:text="${genre.genre}">Жанр</span>
+<div class="container">
+  <h1>Редактировать фильм</h1>
+
+  <form th:action="@{/films/edit}" th:object="${film}" method="post">
+    <input type="hidden" th:field="*{filmId}" />
+
+    <!-- Основная информация -->
+    <div class="form-section">
+      <h3>Основная информация</h3>
+
+      <div class="form-row">
+        <div>
+          <label for="name">Название:</label>
+          <input type="text" id="name" th:field="*{name}" required/>
+          <span class="error-message" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Ошибка в названии</span>
+        </div>
+
+        <div>
+          <label for="duration">Длительность (мин):</label>
+          <input type="number" id="duration" th:field="*{duration}" required/>
+          <span class="error-message" th:if="${#fields.hasErrors('duration')}" th:errors="*{duration}">Ошибка в длительности</span>
+        </div>
+      </div>
+
+      <div>
+        <label for="releaseDate">Дата выпуска:</label>
+        <input type="date" id="releaseDate" th:field="*{releaseDate}" required />
+        <span class="error-message" th:if="${#fields.hasErrors('releaseDate')}" th:errors="*{releaseDate}">Ошибка в дате выпуска</span>
+      </div>
+
+      <div>
+        <label for="description">Описание:</label>
+        <textarea id="description" th:field="*{description}" required></textarea>
+        <span class="error-message" th:if="${#fields.hasErrors('description')}" th:errors="*{description}">Ошибка в описании</span>
+      </div>
     </div>
-  </div>
-  <div>
-    <label>Актеры:</label>
-    <div th:each="actor : ${allActors}">
-      <input type="checkbox" th:field="*{actors}" th:value="${actor.actorId}" /> <span th:text="${actor.name}">Актер</span>
+
+    <!-- Жанры -->
+    <div class="form-section">
+      <h3>Жанры</h3>
+      <div class="checkbox-group">
+        <div th:each="genre : ${allGenres}" class="checkbox-item">
+          <input type="checkbox" th:field="*{genres}" th:value="${genre.genreId}" />
+          <span th:text="${genre.genre}">Жанр</span>
+        </div>
+      </div>
     </div>
-  </div>
-  <div>
-    <label>Режиссеры:</label>
-    <div th:each="director : ${allDirectors}">
-      <input type="checkbox" th:field="*{directors}" th:value="${director.directorId}" /> <span th:text="${director.name}">Режиссер</span>
+
+    <!-- Актеры -->
+    <div class="form-section">
+      <h3>Актеры</h3>
+      <div class="checkbox-group">
+        <div th:each="actor : ${allActors}" class="checkbox-item">
+          <input type="checkbox" th:field="*{actors}" th:value="${actor.actorId}" />
+          <span th:text="${actor.name}">Актер</span>
+        </div>
+      </div>
     </div>
-  </div>
-  <div>
-    <button type="submit">Сохранить изменения</button>
-    <a th:href="@{/films}">Отмена</a>
-  </div>
-</form>
+
+    <!-- Режиссеры -->
+    <div class="form-section">
+      <h3>Режиссеры</h3>
+      <div class="checkbox-group">
+        <div th:each="director : ${allDirectors}" class="checkbox-item">
+          <input type="checkbox" th:field="*{directors}" th:value="${director.directorId}" />
+          <span th:text="${director.name}">Режиссер</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Кнопки действий -->
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+      <a th:href="@{/films}" class="btn btn-secondary">Отмена</a>
+    </div>
+  </form>
+</div>
 </body>
 </html>
-
-
-

@@ -1,6 +1,6 @@
 package com.example.cinema.cinema_app;
-import jakarta.persistence.*;
 
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +33,6 @@ public class Hall {
     @OneToMany(mappedBy = "hall", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Session> sessions = new ArrayList<>();
 
-    // Конструкторы
     public Hall() {}
 
     public Hall(int numberSeats, String hallType, String description,
@@ -46,7 +45,6 @@ public class Hall {
         this.screenSize = screenSize;
     }
 
-    // Методы сборки (аналогично Car из примера)
     public void buildBase(int seats) {
         this.numberSeats = seats;
         System.out.println("Установлено количество мест: " + seats);
@@ -77,7 +75,6 @@ public class Hall {
         System.out.println("Установлен размер экрана: " + size + "м");
     }
 
-    // Геттеры и сеттеры
     public int getHallId() { return hallId; }
     public void setHallId(int hallId) { this.hallId = hallId; }
 
@@ -101,53 +98,4 @@ public class Hall {
 
     public List<Session> getSessions() { return sessions; }
     public void setSessions(List<Session> sessions) { this.sessions = sessions; }
-
-    // Статический метод для Builder
-    public static HallBuilder builder() {
-        return new HallBuilder();
-    }
-
-    // Внутренний Builder класс (опционально)
-    public static class HallBuilder {
-        private int numberSeats;
-        private String hallType = "STANDARD";
-        private String description;
-        private boolean has3d = false;
-        private boolean hasDolby = false;
-        private double screenSize = 0.0;
-
-        public HallBuilder numberSeats(int numberSeats) {
-            this.numberSeats = numberSeats;
-            return this;
-        }
-
-        public HallBuilder hallType(String hallType) {
-            this.hallType = hallType;
-            return this;
-        }
-
-        public HallBuilder description(String description) {
-            this.description = description;
-            return this;
-        }
-
-        public HallBuilder has3d(boolean has3d) {
-            this.has3d = has3d;
-            return this;
-        }
-
-        public HallBuilder hasDolby(boolean hasDolby) {
-            this.hasDolby = hasDolby;
-            return this;
-        }
-
-        public HallBuilder screenSize(double screenSize) {
-            this.screenSize = screenSize;
-            return this;
-        }
-
-        public Hall build() {
-            return new Hall(numberSeats, hallType, description, has3d, hasDolby, screenSize);
-        }
-    }
 }

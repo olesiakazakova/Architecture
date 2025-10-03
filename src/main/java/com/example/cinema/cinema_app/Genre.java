@@ -1,19 +1,15 @@
 package com.example.cinema.cinema_app;
 
 import jakarta.persistence.*;
-
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @Entity
 @Table(name = "genres")
-public class
-Genre {
+public class Genre {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @SequenceGenerator(name = "genre_seq", sequenceName = "genre_sequence", allocationSize = 1)
-    private Long genreId;  // Это поле будет автоинкрементным
+    private Long genreId;
 
     @Column(nullable = false, unique = true)
     private String genre;

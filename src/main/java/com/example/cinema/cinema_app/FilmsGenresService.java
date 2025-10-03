@@ -2,7 +2,6 @@ package com.example.cinema.cinema_app;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.Optional;
 
 @Service
@@ -21,5 +20,9 @@ public class FilmsGenresService {
             return true;
         }
         return false;
+    }
+
+    public void deleteAllByGenre(Genre genre) {
+        filmsGenresRepository.deleteByGenre(genre);
     }
 }

@@ -1,19 +1,36 @@
 package com.example.cinema.cinema_app;
 
 public class DeluxeHallBuilder extends HallBuilder {
+    private Hall hall;
 
     public DeluxeHallBuilder() {
-        hall = new Hall();
+        this.hall = new Hall();
     }
 
     @Override
-    public Hall buildHall() {
-        hall.buildBase(120);
-        hall.buildHallType("DELUXE");
-        hall.buildDescription("Улучшенный зал Deluxe");
-        hall.build3d(true);
-        hall.buildDolby(false);
-        hall.buildScreenSize(18.0);
+    public void buildBase() {
+        hall.setNumberSeats(120);
+    }
+
+    @Override
+    public void buildType() {
+        hall.setHallType("DELUXE");
+        hall.setDescription("Улучшенный зал Deluxe с оптимальным соотношением цены и качества");
+    }
+
+    @Override
+    public void buildAmenities() {
+        hall.setHas3d(true);
+        hall.setHasDolby(false);
+    }
+
+    @Override
+    public void buildScreen() {
+        hall.setScreenSize(18.0);
+    }
+
+    @Override
+    public Hall getHall() {
         return hall;
     }
 }

@@ -1,7 +1,6 @@
 package com.example.cinema.cinema_app;
 
 import jakarta.persistence.Embeddable;
-
 import java.io.Serializable;
 import java.util.Objects;
 

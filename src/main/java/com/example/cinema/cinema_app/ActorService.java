@@ -8,7 +8,7 @@ import java.util.Optional;
 @Service
 public class ActorService {
     @Autowired
-    private ActorRepository actorRepository;//для автоматического внедрения экземпляра ActorRepository. Это позволяет сервису взаимодействовать с базой данных через репозиторий.
+    private ActorRepository actorRepository;
 
     public List<Actor> getAllActors() {
         return actorRepository.findAll();
@@ -42,6 +42,5 @@ public class ActorService {
     public List<Actor> findAllById(List<Long> selectedActors) {
         return actorRepository.findAllById(selectedActors);
     }
-
 }
 

@@ -1,11 +1,11 @@
 package com.example.cinema.cinema_app;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -76,13 +76,9 @@ public class GenreController {
         Optional<Genre> optionalGenre = genreService.getGenre(genreId);
         if (optionalGenre.isPresent()) {
             Genre genre = optionalGenre.get();
-            List<FilmsGenres> films = genre.getFilmsGenres();
-            if (films!=null) {
-                for (FilmsGenres film: films) {
-                    Film filmId = film.getFilm();
-                    filmsGenresService.deleteFilmsGenres(genre, filmId);
-                }
-            }
+
+            filmsGenresService.deleteAllByGenre(genre);
+
             genreService.deleteGenre(genreId);
         }
         return "redirect:/genres";

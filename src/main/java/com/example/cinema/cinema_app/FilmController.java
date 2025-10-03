@@ -60,13 +60,11 @@ public class FilmController {
                           @RequestParam(required = false) String newDirector,
                           @RequestParam(required = false) String newActor) {
 
-        // Проверяем на наличие ошибок валидации
         if (bindingResult.hasErrors()) {
             System.out.println("Ошибки валидации: " + bindingResult.getAllErrors());
-            return "film/error"; // Возвращаем на страницу добавления фильма
+            return "film/error";
         }
 
-        // Обработка существующих актёров и режиссёров
         if (genres != null) {
             List<Genre> selectedGenres = genreService.findAllById(genres);
             film.getGenres().addAll(selectedGenres);
@@ -81,7 +79,6 @@ public class FilmController {
             film.getDirectors().addAll(selectedDirectors);
         }
 
-        // Обработка новых жанров, режиссёров и актеров
         if (newGenre != null && !newGenre.trim().isEmpty()) {
             Genre genre = genreService.findByName(newGenre)
                     .orElseGet(() -> {
@@ -113,7 +110,6 @@ public class FilmController {
             film.getActors().add(actor);
         }
 
-        // Сохраняем фильм с установленными связями
         filmService.save(film);
         return "redirect:/films";
     }
@@ -142,21 +138,18 @@ public class FilmController {
             return "film/error";
         }
 
-        film.setFilmId(filmId); // Сохраняем ID, чтобы обновить правильный фильм в базе данных
+        film.setFilmId(filmId);
 
-        // Обработка жанров
         if (genres != null) {
             List<Genre> genreList = genreService.findAllById(genres);
             film.getGenres().addAll(genreList);
         }
 
-        // Обработка актёров
         if (actors != null) {
             List<Actor> actorList = actorService.findAllById(actors);
             film.getActors().addAll(actorList);
         }
 
-        // Обработка режиссёров
         if (directors != null) {
             List<Director> directorList = directorService.findAllById(directors);
             film.getDirectors().addAll(directorList);
@@ -176,35 +169,27 @@ public class FilmController {
             try {
                 film = filmService.findById(filmId);
                 if (film != null) {
-                    // Удаляем актеров
                     for (Actor actor : film.getActors()) {
                         Long actorId = actor.getActorId();
                         filmsActorsService.deleteFilmsActors(actorId, filmId);
                     }
-                    // Удаляем режиссеров
                     for (Director director : film.getDirectors()) {
                         Long directorId = director.getDirectorId();
                         filmsDirectorsService.deleteFilmsDirectors(directorId, filmId);
                     }
-                    // Удаляем жанры
                     for (Genre genre : film.getGenres()) {
                         filmsGenresService.deleteFilmsGenres(genre, film);
                     }
-                    // Удаляем фильм
                     filmService.delete(filmId);
                 }
-                return "redirect:/films"; // Успешное завершение
+                return "redirect:/films";
             } catch (ObjectOptimisticLockingFailureException e) {
                 attempt++;
-                // Логирование ошибки для диагностики
                 System.err.println("Попытка " + attempt + " не удалась. Оживление состояния...");
-                // Обновляем объект фильма
                 film = filmService.findById(filmId);
                 if (film == null) {
-                    // Если фильм больше не существует, выходим из цикла
                     break;
                 }
-                // Если достигнут максимум попыток
                 if (attempt >= maxRetries) {
                     return "film/error";
                 }

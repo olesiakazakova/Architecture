@@ -1,14 +1,16 @@
 package com.example.cinema.cinema_app;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import java.time.format.DateTimeFormatter;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/tickets")
@@ -30,140 +32,134 @@ public class TicketController {
     private TicketTypeFactory ticketTypeFactory;
 
     @GetMapping
-    public String getAllTickets(Model model) {
-        List<Ticket> tickets = ticketRepository.findAll();
-        tickets.forEach(ticket -> {
-            System.out.println("Ticket ID: " + ticket.getTicketId());
-            System.out.println("Session: " + ticket.getSession());
-            System.out.println("User: " + ticket.getUser());
-            if (ticket.getSession() != null) {
-                System.out.println("Session price: " + ticket.getSession().getCost());
+    public String getAllTickets(Model model,
+                                @RequestParam(required = false) UUID sessionId) {
+        try {
+            List<Ticket> tickets;
+
+            if (sessionId != null) {
+                tickets = ticketRepository.findBySession_SessionIdOrderByRowAscSeatAsc(sessionId);
+
+                tickets.forEach(ticket -> ticket.setTicketTypeFactory(ticketTypeFactory));
+
+                Map<Integer, List<Ticket>> seatingChart = sessionService.getHallSeatingChart(sessionId);
+                model.addAttribute("seatingChart", seatingChart);
+
+                Map<String, Object> stats = sessionService.getSessionStats(sessionId);
+                model.addAttribute("stats", stats);
+
+                Session cinemaSession = sessionService.findById(sessionId);
+                model.addAttribute("cinemaSession", cinemaSession);
+            } else {
+                tickets = ticketRepository.findAll();
+                tickets.forEach(ticket -> ticket.setTicketTypeFactory(ticketTypeFactory));
             }
-        });
-        List<Session> cinemaSessions = sessionRepository.findAll();
-        model.addAttribute("cinemaSessions", cinemaSessions);
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-        List<String> formattedStartTimes = cinemaSessions.stream()
-                .map(session -> {
-                    return session.getStartTime() != null ? session.getStartTime().format(timeFormatter) : "Неизвестно";
-                })
-                .collect(Collectors.toList());
 
-        model.addAttribute("formattedStartTimes", formattedStartTimes);
-        model.addAttribute("tickets", tickets);
-        return "session/listTickets";
-    }
-
-    @GetMapping("/add")
-    public String showAddTicketForm(Model model) {
-        try {
+            model.addAttribute("tickets", tickets);
             model.addAttribute("cinemaSessions", sessionRepository.findAll());
+            model.addAttribute("selectedSessionId", sessionId);
             model.addAttribute("users", userRepository.findAll());
             model.addAttribute("discountTypes", DiscountType.values());
-            return "session/addTicket";
+
+            return "session/listTickets";
+
         } catch (Exception e) {
-            return "redirect:/tickets?error=" + e.getMessage();
+            model.addAttribute("error", "Ошибка при загрузке билетов: " + e.getMessage());
+            return "session/listTickets";
         }
     }
 
-    @PostMapping("/add")
-    public String addTicket(@RequestParam("sessionId") UUID sessionId,
-                            @RequestParam("userEmail") String userEmail,
-                            @RequestParam("row") int row,
-                            @RequestParam("seat") int seat,
-                            @RequestParam("discountType") DiscountType discountType) {
+    @PostMapping("/purchase")
+    public String purchaseTicket(@RequestParam UUID ticketId,
+                                 @RequestParam String userEmail,
+                                 @RequestParam DiscountType discountType,
+                                 RedirectAttributes redirectAttributes) {
 
         try {
-            Session session = sessionRepository.findById(sessionId)
-                    .orElseThrow(() -> new IllegalArgumentException("Session not found"));
-            User user = userRepository.findById(userEmail)
-                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            Ticket ticket = ticketRepository.findById(ticketId)
+                    .orElseThrow(() -> new IllegalArgumentException("Билет не найден"));
 
-            Ticket ticket = new Ticket();
-            ticket.setSession(session);
+            User user = userRepository.findById(userEmail)
+                    .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
+
+            if (ticket.getIsPurchased()) {
+                redirectAttributes.addFlashAttribute("error", "Этот билет уже куплен");
+                return "redirect:/tickets?sessionId=" + ticket.getSession().getSessionId();
+            }
+
+            TicketType ticketType = ticketTypeFactory.createTicketType(discountType);
+            BigDecimal finalPrice = BigDecimal.ZERO;
+
+            if (ticket.getSession() != null && ticket.getSession().getCost() != null) {
+                finalPrice = ticketType.calculatePrice(ticket.getSession().getCost());
+            }
+
             ticket.setUser(user);
-            ticket.setRow(row);
-            ticket.setSeat(seat);
             ticket.setDiscount(discountType);
+            ticket.setIsPurchased(true);
             ticket.setTicketTypeFactory(ticketTypeFactory);
 
             ticketRepository.save(ticket);
-            return "redirect:/tickets";
+
+            redirectAttributes.addFlashAttribute("success",
+                    "Билет успешно куплен! " + ticketType.getTicketTypeName() +
+                            " - Цена: " + finalPrice + " ₽");
+
+            return "redirect:/tickets?sessionId=" + ticket.getSession().getSessionId();
 
         } catch (Exception e) {
-            return "redirect:/tickets/add?error=" + e.getMessage();
+            redirectAttributes.addFlashAttribute("error", "Ошибка при покупке билета: " + e.getMessage());
+            return "redirect:/tickets";
         }
     }
 
-    @GetMapping("/edit")
-    public String showEditTicketForm(@RequestParam("ticketId") UUID ticketId, Model model) {
+    @PostMapping("/cancel")
+    public String cancelTicket(@RequestParam UUID ticketId,
+                               RedirectAttributes redirectAttributes) {
         try {
             Ticket ticket = ticketRepository.findById(ticketId)
                     .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
 
-            model.addAttribute("ticket", ticket);
-            model.addAttribute("cinemaSessions", sessionRepository.findAll());
-            model.addAttribute("users", userRepository.findAll());
-            model.addAttribute("discountTypes", DiscountType.values());
+            UUID sessionId = ticket.getSession().getSessionId();
 
-            return "session/editTicket";
-        } catch (Exception e) {
-            return "redirect:/tickets?error=" + e.getMessage();
-        }
-    }
-
-    @PostMapping("/edit")
-    public String editTicket(@RequestParam("ticketId") UUID ticketId,
-                             @RequestParam("sessionId") UUID sessionId,
-                             @RequestParam("userEmail") String userEmail,
-                             @RequestParam("row") int row,
-                             @RequestParam("seat") int seat,
-                             @RequestParam("discountType") DiscountType discountType) {
-
-        try {
-            Ticket ticket = ticketRepository.findById(ticketId)
-                    .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
-            Session session = sessionRepository.findById(sessionId)
-                    .orElseThrow(() -> new IllegalArgumentException("Session not found"));
-            User user = userRepository.findById(userEmail)
-                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-            ticket.setSession(session);
-            ticket.setUser(user);
-            ticket.setRow(row);
-            ticket.setSeat(seat);
-            ticket.setDiscount(discountType);
-            ticket.setTicketTypeFactory(ticketTypeFactory);
+            ticket.setUser(null);
+            ticket.setDiscount(DiscountType.NO_DISCOUNT);
+            ticket.setIsPurchased(false);
 
             ticketRepository.save(ticket);
-            return "redirect:/tickets";
+
+            redirectAttributes.addFlashAttribute("success", "Покупка билета отменена");
+            return "redirect:/tickets?sessionId=" + sessionId;
 
         } catch (Exception e) {
-            return "redirect:/tickets/edit?ticketId=" + ticketId + "&error=" + e.getMessage();
+            redirectAttributes.addFlashAttribute("error", "Ошибка при отмене билета: " + e.getMessage());
+            return "redirect:/tickets";
         }
     }
 
-    @PostMapping("/delete")
-    public String deleteTicket(@RequestParam UUID ticketId) {
+    @GetMapping("/calculate-price")
+    @ResponseBody
+    public Map<String, Object> calculatePrice(@RequestParam BigDecimal basePrice,
+                                              @RequestParam DiscountType discountType) {
+        Map<String, Object> result = new HashMap<>();
+
         try {
-            ticketRepository.deleteById(ticketId);
-            return "redirect:/tickets";
+            TicketType ticketType = ticketTypeFactory.createTicketType(discountType);
+            BigDecimal finalPrice = ticketType.calculatePrice(basePrice);
+            BigDecimal discountAmount = basePrice.subtract(finalPrice);
+
+            result.put("success", true);
+            result.put("basePrice", basePrice);
+            result.put("finalPrice", finalPrice);
+            result.put("discountAmount", discountAmount);
+            result.put("discountPercent", discountAmount.divide(basePrice, 2, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)));
+            result.put("ticketTypeName", ticketType.getTicketTypeName());
+
         } catch (Exception e) {
-            return "redirect:/tickets?error=Ticket not found";
-        }
-    }
-    // Вспомогательный метод для конвертации строки в DiscountType
-    private DiscountType mapTicketTypeToDiscountType(String ticketType) {
-        if (ticketType == null) {
-            return DiscountType.NO_DISCOUNT;
+            result.put("success", false);
+            result.put("error", e.getMessage());
         }
 
-        switch (ticketType.toLowerCase()) {
-            case "student": return DiscountType.STUDENT_DISCOUNT;
-            case "child": return DiscountType.CHILD_DISCOUNT;
-            case "senior": return DiscountType.SENIOR_DISCOUNT;
-            default: return DiscountType.NO_DISCOUNT;
-        }
+        return result;
     }
 }
-

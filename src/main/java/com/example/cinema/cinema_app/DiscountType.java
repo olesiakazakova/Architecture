@@ -18,29 +18,16 @@ public enum DiscountType {
 
     public static DiscountType fromLabel(String label) {
         if (label == null) {
-            return NO_DISCOUNT; // Возвращаем NO_DISCOUNT, если метка null
+            return NO_DISCOUNT;
         }
 
-        String trimmedLabel = label.trim(); // Убираем лишние пробелы
+        String trimmedLabel = label.trim();
         for (DiscountType type : values()) {
             if (type.getLabel().equalsIgnoreCase(trimmedLabel)) {
-                return type; // Возвращаем соответствующий тип скидки
-            }
-        }
-        return NO_DISCOUNT; // Возвращаем NO_DISCOUNT, если метка не найдена
-    }
-
-    public static DiscountType fromDatabaseValue(String databaseValue) {
-        if (databaseValue == null) {
-            return NO_DISCOUNT; // Возможная обработка нулевых значений из базы данных
-        }
-
-        for (DiscountType type : values()) {
-            if (type.getLabel().equalsIgnoreCase(databaseValue.trim())) {
                 return type;
             }
         }
-        return NO_DISCOUNT; // Возвращаем NO_DISCOUNT, если значение из базы данных неизвестно
+        return NO_DISCOUNT;
     }
 }
 

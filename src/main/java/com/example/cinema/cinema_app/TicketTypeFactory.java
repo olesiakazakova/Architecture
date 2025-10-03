@@ -3,7 +3,7 @@ package com.example.cinema.cinema_app;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TicketTypeFactory {
+class TicketTypeFactory {
 
     public TicketType createTicketType(DiscountType discountType) {
         if (discountType == null) {
