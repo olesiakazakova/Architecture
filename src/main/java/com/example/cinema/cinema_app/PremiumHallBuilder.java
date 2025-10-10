@@ -9,29 +9,13 @@ public class PremiumHallBuilder extends HallBuilder {
     }
 
     @Override
-    public void buildBase() {
+    public Hall buildHall() {
         hall.setNumberSeats(80);
-    }
-
-    @Override
-    public void buildType() {
         hall.setHallType("PREMIUM");
         hall.setDescription("Премиальный кинозал с улучшенным комфортом и обслуживанием");
-    }
-
-    @Override
-    public void buildAmenities() {
         hall.setHas3d(true);
         hall.setHasDolby(true);
-    }
-
-    @Override
-    public void buildScreen() {
         hall.setScreenSize(15.0);
-    }
-
-    @Override
-    public Hall getHall() {
         return hall;
     }
 }

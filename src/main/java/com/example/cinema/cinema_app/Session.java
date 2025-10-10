@@ -1,6 +1,10 @@
 package com.example.cinema.cinema_app;
 
 import jakarta.persistence.*;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +37,12 @@ public class Session {
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Ticket> tickets = new ArrayList<>();
 
+    @Transient
+    private FilmFlyweightFactory filmFactory;
+
+    @Transient
+    private FilmService filmService;
+
     public Session() {
     }
 
@@ -44,20 +54,50 @@ public class Session {
         this.cost = cost;
     }
 
+    // Метод для инициализации Flyweight зависимостей
+    public void initFlyweight(FilmFlyweightFactory factory, FilmService service) {
+        this.filmFactory = factory;
+        this.filmService = service;
+
+        // Кэшируем фильм при инициализации
+        if (this.film != null && this.film.getFilmId() != null) {
+            factory.putFilm(this.film);
+        }
+    }
+
+    // Геттер, который использует Flyweight при наличии фабрики
+    public Film getFilm() {
+        if (filmFactory != null && film != null && film.getFilmId() != null) {
+            Film cachedFilm = filmFactory.getFilm(film.getFilmId());
+            if (cachedFilm != null) {
+                return cachedFilm;
+            } else {
+                // Если фильма нет в кэше, добавляем его
+                filmFactory.putFilm(film);
+            }
+        }
+        return film;
+    }
+
+    // Сеттер, который обновляет кэш
+    public void setFilm(Film film) {
+        this.film = film;
+        if (filmFactory != null && film != null && film.getFilmId() != null) {
+            filmFactory.putFilm(film);
+        }
+    }
+
+    // Геттер для прямого доступа к filmId (полезно для оптимизации)
+    public Long getFilmId() {
+        return film != null ? film.getFilmId() : null;
+    }
+
     public UUID getSessionId() {
         return sessionId;
     }
 
     public void setSessionId(UUID sessionId) {
         this.sessionId = sessionId;
-    }
-
-    public Film getFilm() {
-        return film;
-    }
-
-    public void setFilm(Film film) {
-        this.film = film;
     }
 
     public Hall getHall() {

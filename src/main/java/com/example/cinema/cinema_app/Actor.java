@@ -21,12 +21,12 @@ public class Actor {
         return actorId;
     }
 
-    public void setActorId(Long actorId) {
-        this.actorId = actorId;
-    }
-
     public String getName() {
         return name;
+    }
+
+    public void setId(Long actorId) {
+        this.actorId =actorId;
     }
 
     public void setName(String name) {

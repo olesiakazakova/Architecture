@@ -9,18 +9,32 @@ public class FilmService {
     @Autowired
     private FilmRepository filmRepository;
 
+    @Autowired
+    private FilmFlyweightFactory filmFactory;
+
     public List<Film> findAll() {
-        return filmRepository.findAll();
+        List<Film> films = filmRepository.findAll();
+        // Автоматически кэшируем все загруженные фильмы
+        filmFactory.preloadFilms(films);
+        return films;
     }
 
     public Film findById(Long id) {
-        return filmRepository.findById(id).orElse(null);
+        Film film = filmRepository.findById(id).orElse(null);
+        if (film != null) {
+            filmFactory.putFilm(film);
+        }
+        return film;
     }
 
     public Film save(Film film) {
-        return filmRepository.save(film);
+        Film savedFilm = filmRepository.save(film);
+        filmFactory.putFilm(savedFilm);
+        return savedFilm;
     }
 
-    public void delete(Long id) {filmRepository.deleteById(id);}
-
+    public void delete(Long id) {
+        filmRepository.deleteById(id);
+        filmFactory.removeFilm(id);
+    }
 }

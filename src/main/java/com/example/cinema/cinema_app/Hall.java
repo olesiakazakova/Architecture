@@ -45,36 +45,6 @@ public class Hall {
         this.screenSize = screenSize;
     }
 
-    public void buildBase(int seats) {
-        this.numberSeats = seats;
-        System.out.println("Установлено количество мест: " + seats);
-    }
-
-    public void buildHallType(String type) {
-        this.hallType = type;
-        System.out.println("Установлен тип зала: " + type);
-    }
-
-    public void buildDescription(String desc) {
-        this.description = desc;
-        System.out.println("Добавлено описание: " + desc);
-    }
-
-    public void build3d(boolean has3d) {
-        this.has3d = has3d;
-        System.out.println("3D поддержка: " + (has3d ? "да" : "нет"));
-    }
-
-    public void buildDolby(boolean hasDolby) {
-        this.hasDolby = hasDolby;
-        System.out.println("Dolby звук: " + (hasDolby ? "да" : "нет"));
-    }
-
-    public void buildScreenSize(double size) {
-        this.screenSize = size;
-        System.out.println("Установлен размер экрана: " + size + "м");
-    }
-
     public int getHallId() { return hallId; }
     public void setHallId(int hallId) { this.hallId = hallId; }
 

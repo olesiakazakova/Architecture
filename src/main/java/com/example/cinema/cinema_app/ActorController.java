@@ -23,13 +23,13 @@ public class ActorController {
     public String listActors(Model model) {
         List<Actor> actors = actorService.getAllActors();
         model.addAttribute("actors", actors);
-        return "film/listActors";
+        return "actor/listActors";
     }
 
     @GetMapping("/add")
     public String showAddForm(Model model) {
         model.addAttribute("actor", new Actor());
-        return "film/addActor";
+        return "actor/addActor";
     }
 
     @PostMapping("/add")
@@ -49,9 +49,9 @@ public class ActorController {
         if (optionalActor.isPresent()) {
             Actor actor = optionalActor.get();
             model.addAttribute("actor", actor);
-            return "film/editActor";
+            return "actor/editActor";
         }
-        else return "films/error";
+        else return "film/error";
     }
 
     @PostMapping("/edit")

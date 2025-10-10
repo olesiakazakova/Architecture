@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Controller
@@ -16,12 +17,6 @@ public class SessionController {
     private SessionRepository sessionRepository;
 
     @Autowired
-    private SessionRepository filmRepository;
-
-    @Autowired
-    private SessionRepository hallRepository;
-
-    @Autowired
     private HallService hallService;
 
     @Autowired
@@ -30,11 +25,13 @@ public class SessionController {
     @Autowired
     private SessionService sessionService;
 
-
     @GetMapping()
     public String getAllSessions(Model model) {
-        List<Session> sessions = sessionRepository.findAll();
+        List<Session> sessions = sessionService.findAll();
+        Map<String, Object> flyweightStats = sessionService.getFlyweightStats();
+
         model.addAttribute("sessions", sessions);
+        model.addAttribute("flyweightStats", flyweightStats);
         return "session/listSessions";
     }
 
@@ -49,32 +46,47 @@ public class SessionController {
     @PostMapping("/add")
     public String createSession(@ModelAttribute Session session, RedirectAttributes redirectAttributes) {
         try {
-            System.out.println("Creating new session with hall: " + session.getHall().getHallId());
-            System.out.println("Hall seats: " + session.getHall().getNumberSeats());
-
             Session savedSession = sessionService.save(session);
-
             List<Ticket> tickets = sessionService.getTicketsForSession(savedSession.getSessionId());
-            System.out.println("Tickets created: " + tickets.size());
 
+            Map<String, Object> stats = sessionService.getFlyweightStats();
             redirectAttributes.addFlashAttribute("success",
-                    "Сеанс успешно создан! Создано " + tickets.size() + " билетов.");
+                    "Сеанс успешно создан! Создано " + tickets.size() + " билетов. " +
+                            "Flyweight cache: " + stats.get("cacheSize") + " films");
+
         } catch (Exception e) {
-            System.err.println("Error creating session: " + e.getMessage());
-            e.printStackTrace();
             redirectAttributes.addFlashAttribute("error",
                     "Ошибка при создании сеанса: " + e.getMessage());
         }
         return "redirect:/sessions";
     }
 
+    @GetMapping("/film/{filmId}")
+    public String getSessionsByFilm(@PathVariable Long filmId, Model model) {
+        List<Session> sessions = sessionService.findByFilmId(filmId);
+        Film film = filmService.findById(filmId);
+
+        model.addAttribute("sessions", sessions);
+        model.addAttribute("film", film);
+        model.addAttribute("flyweightInfo",
+                "Используется один экземпляр фильма для " + sessions.size() + " сеансов");
+
+        return "session/sessionsByFilm";
+    }
+
+    @GetMapping("/flyweight-stats")
+    @ResponseBody
+    public Map<String, Object> getFlyweightStats() {
+        return sessionService.getFlyweightStats();
+    }
+
+    // Остальные методы контроллера без изменений...
     @GetMapping("/edit/{sessionId}")
     public String showEditForm(@PathVariable UUID sessionId, Model model) {
         Session session = sessionService.findById(sessionId);
-        System.out.println("Session ID: " + sessionService.findById(sessionId));
-        System.out.println("Session ID: " + session.getSessionId());
         if (session == null) {
-            return "redirect:/sessions";    }
+            return "redirect:/sessions";
+        }
         model.addAttribute("session", session);
         model.addAttribute("films", filmService.findAll());
         model.addAttribute("halls", hallService.findAll());
@@ -84,7 +96,7 @@ public class SessionController {
     @PostMapping("/update")
     public String updateSession(@ModelAttribute Session sessionDetails,
                                 RedirectAttributes redirectAttributes) {
-        UUID sessionId = sessionDetails.getSessionId(); // Получаем идентификатор из объекта
+        UUID sessionId = sessionDetails.getSessionId();
         return sessionRepository.findById(sessionId)
                 .map(session -> {
                     session.setFilm(sessionDetails.getFilm());
@@ -112,6 +124,4 @@ public class SessionController {
         }
     }
 }
-
-
 

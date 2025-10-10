@@ -21,13 +21,13 @@ public class DirectorController {
     public String listDirectors(Model model) {
         List<Director> directors = directorService.getAllDirectors();
         model.addAttribute("directors", directors);
-        return "film/listDirectors";
+        return "director/listDirectors";
     }
 
     @GetMapping("/add")
     public String showAddForm(Model model) {
         model.addAttribute("director", new Director());
-        return "film/addDirectors";
+        return "director/addDirectors";
     }
 
     @PostMapping("/add")
@@ -45,7 +45,7 @@ public class DirectorController {
     public String showEditForm(@RequestParam("directorId") Long directorId, Model model) {
         Director director = directorService.getDirectorById(directorId);
         model.addAttribute("director", director);
-        return "film/editDirectors";
+        return "director/editDirectors";
     }
 
     @PostMapping("/edit")

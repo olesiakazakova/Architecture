@@ -26,7 +26,7 @@ public class Ticket implements Copyable {
     private int seat;
 
     @Enumerated(EnumType.STRING)
-    private DiscountType discount;
+    private DiscountType discount = DiscountType.NO_DISCOUNT;
 
     @Column(name = "is_purchased", nullable = false)
     private boolean isPurchased = false;
@@ -72,18 +72,43 @@ public class Ticket implements Copyable {
     }
 
     public TicketType getTicketType() {
-        if (ticketTypeFactory == null) {
-            throw new IllegalStateException("TicketTypeFactory not set");
+        // ВСЕГДА создаем TicketType напрямую, игнорируем фабрику если она null
+        DiscountType discountType = this.discount != null ? this.discount : DiscountType.NO_DISCOUNT;
+
+        // Если фабрика доступна, используем ее
+        if (ticketTypeFactory != null) {
+            return ticketTypeFactory.createTicketType(discountType);
         }
-        return ticketTypeFactory.createTicketType(this.discount);
+
+        // Иначе создаем вручную
+        return createTicketTypeManually(discountType);
+    }
+
+    private TicketType createTicketTypeManually(DiscountType discountType) {
+        switch (discountType) {
+            case STUDENT_DISCOUNT:
+                return new StudentTicketType();
+            case CHILD_DISCOUNT:
+                return new ChildTicketType();
+            case SENIOR_DISCOUNT:
+                return new SeniorTicketType();
+            case NO_DISCOUNT:
+            default:
+                return new RegularTicketType();
+        }
     }
 
     public BigDecimal getFinalPrice() {
-        if (session == null || session.getCost() == null) {
-            return BigDecimal.ZERO;
+        try {
+            if (session == null || session.getCost() == null) {
+                return BigDecimal.ZERO;
+            }
+            TicketType ticketType = getTicketType();
+            return ticketType.calculatePrice(session.getCost());
+        } catch (Exception e) {
+            // В случае любой ошибки возвращаем базовую цену
+            return session != null && session.getCost() != null ? session.getCost() : BigDecimal.ZERO;
         }
-        TicketType ticketType = getTicketType();
-        return ticketType.calculatePrice(session.getCost());
     }
 
     public UUID getSessionId() {

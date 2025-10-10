@@ -1,5 +1,6 @@
 package com.example.cinema.cinema_app;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,21 +19,57 @@ public class SessionService {
     @Autowired
     private HallRepository hallRepository;
 
+    @Autowired
+    private FilmFlyweightFactory filmFactory;
+
+    @Autowired
+    private FilmService filmService;
+
+    @PostConstruct
+    public void init() {
+        // Предзагрузка всех фильмов при старте приложения
+        preloadAllFilms();
+    }
+
+    private void preloadAllFilms() {
+        List<Film> allFilms = filmService.findAll();
+        filmFactory.preloadFilms(allFilms);
+        System.out.println("Preloaded " + allFilms.size() + " films into Flyweight cache");
+    }
+
     public List<Session> findAll() {
-        return sessionRepository.findAll();
+        List<Session> sessions = sessionRepository.findAll();
+
+        // Инициализируем Flyweight для всех сеансов
+        sessions.forEach(session -> session.initFlyweight(filmFactory, filmService));
+
+        return sessions;
     }
 
     public Session findById(UUID id) {
-        return sessionRepository.findById(id).orElse(null);
+        Session session = sessionRepository.findById(id).orElse(null);
+        if (session != null) {
+            session.initFlyweight(filmFactory, filmService);
+        }
+        return session;
     }
 
     @Transactional
     public Session save(Session session) {
+        // Инициализируем Flyweight перед сохранением
+        session.initFlyweight(filmFactory, filmService);
+
+        // Убеждаемся, что фильм находится в кэше
+        if (session.getFilm() != null) {
+            filmFactory.putFilm(session.getFilm());
+        }
+
         Session savedSession = sessionRepository.save(session);
         createTicketsForSession(savedSession);
 
         return savedSession;
     }
+
 
     @Transactional
     public Session update(UUID sessionId, Session sessionDetails) {
@@ -40,7 +77,10 @@ public class SessionService {
                 .map(session -> {
                     Hall oldHall = session.getHall();
 
+                    // Обновляем фильм и кэшируем его
                     session.setFilm(sessionDetails.getFilm());
+                    filmFactory.putFilm(sessionDetails.getFilm());
+
                     session.setHall(sessionDetails.getHall());
                     session.setDate(sessionDetails.getDate());
                     session.setStartTime(sessionDetails.getStartTime());
@@ -60,6 +100,74 @@ public class SessionService {
     public void delete(UUID id) {
         sessionRepository.deleteById(id);
     }
+
+    // Метод для массового создания сеансов с оптимизацией Flyweight
+    @Transactional
+    public List<Session> createSessionsForFilm(Film film, List<Session> sessionTemplates) {
+        // Кэшируем фильм один раз
+        filmFactory.putFilm(film);
+
+        List<Session> savedSessions = new ArrayList<>();
+
+        for (Session template : sessionTemplates) {
+            template.setFilm(film);
+            template.initFlyweight(filmFactory, filmService);
+
+            Session savedSession = sessionRepository.save(template);
+            createTicketsForSession(savedSession);
+            savedSessions.add(savedSession);
+        }
+
+        System.out.println("Created " + savedSessions.size() + " sessions for film: " + film.getName());
+        System.out.println("Flyweight cache size: " + filmFactory.getCacheSize());
+
+        return savedSessions;
+    }
+
+    // Метод для получения сеансов по фильму с Flyweight оптимизацией
+    public List<Session> findByFilmId(Long filmId) {
+        // Загружаем фильм через Flyweight
+        Film film = filmFactory.getOrLoadFilm(filmId, filmService);
+
+        List<Session> sessions = sessionRepository.findByFilm_FilmId(filmId);
+
+        // Устанавливаем общий фильм для всех сеансов
+        sessions.forEach(session -> {
+            session.setFilm(film); // Используем один экземпляр
+            session.initFlyweight(filmFactory, filmService);
+        });
+
+        return sessions;
+    }
+
+    // Метод для получения статистики по использованию Flyweight
+    public Map<String, Object> getFlyweightStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("cacheSize", filmFactory.getCacheSize());
+
+        List<Session> allSessions = sessionRepository.findAll();
+        long uniqueFilms = allSessions.stream()
+                .map(Session::getFilmId)
+                .distinct()
+                .count();
+
+        stats.put("totalSessions", allSessions.size());
+        stats.put("uniqueFilms", uniqueFilms);
+        stats.put("memorySavings", calculateMemorySavings(allSessions.size(), (int) uniqueFilms));
+
+        return stats;
+    }
+
+    private String calculateMemorySavings(int totalSessions, int uniqueFilms) {
+        // Примерная оценка экономии памяти
+        int estimatedFilmSize = 500; // bytes per Film object
+        int withoutFlyweight = totalSessions * estimatedFilmSize;
+        int withFlyweight = uniqueFilms * estimatedFilmSize;
+        int savings = withoutFlyweight - withFlyweight;
+
+        return String.format("Saved approximately %d KB memory", savings / 1024);
+    }
+
 
     private void createTicketsForSession(Session session) {
         try {

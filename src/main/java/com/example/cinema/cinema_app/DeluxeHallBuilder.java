@@ -8,29 +8,13 @@ public class DeluxeHallBuilder extends HallBuilder {
     }
 
     @Override
-    public void buildBase() {
+    public Hall buildHall() {
         hall.setNumberSeats(120);
-    }
-
-    @Override
-    public void buildType() {
         hall.setHallType("DELUXE");
         hall.setDescription("Улучшенный зал Deluxe с оптимальным соотношением цены и качества");
-    }
-
-    @Override
-    public void buildAmenities() {
         hall.setHas3d(true);
         hall.setHasDolby(false);
-    }
-
-    @Override
-    public void buildScreen() {
         hall.setScreenSize(18.0);
-    }
-
-    @Override
-    public Hall getHall() {
         return hall;
     }
 }

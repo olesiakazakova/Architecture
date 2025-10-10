@@ -7,6 +7,8 @@ import java.util.UUID;
 
 public interface TicketRepository extends JpaRepository<Ticket, UUID> {
 
+    List<Ticket> findByIsPurchasedFalse();
+
     List<Ticket> findBySession_SessionId(UUID sessionId);
 
     List<Ticket> findBySession_SessionIdOrderByRowAscSeatAsc(UUID sessionId);
@@ -20,4 +22,6 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
     Optional<Ticket> findBySession_SessionIdAndRowAndSeat(UUID sessionId, int row, int seat);
 
     int countBySession_SessionId(UUID sessionId);
+
+    List<Ticket> findByIsPurchasedTrue();
 }

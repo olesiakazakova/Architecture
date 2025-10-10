@@ -9,29 +9,13 @@ public class VipHallBuilder extends HallBuilder {
     }
 
     @Override
-    public void buildBase() {
+    public Hall buildHall() {
         hall.setNumberSeats(50);
-    }
-
-    @Override
-    public void buildType() {
         hall.setHallType("VIP");
         hall.setDescription("VIP зал с повышенным комфортом");
-    }
-
-    @Override
-    public void buildAmenities() {
         hall.setHas3d(true);
         hall.setHasDolby(true);
-    }
-
-    @Override
-    public void buildScreen() {
         hall.setScreenSize(12.0);
-    }
-
-    @Override
-    public Hall getHall() {
         return hall;
     }
 }

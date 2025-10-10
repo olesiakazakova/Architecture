@@ -7,6 +7,6 @@ import java.util.UUID;
 
 @Repository
 public interface SessionRepository extends JpaRepository<Session, UUID> {
-    List<Session> findByFilm_FilmId(Integer filmId);
+    List<Session> findByFilm_FilmId(Long filmId);
     List<Session> findByHall_HallId(Integer hallId);
 }

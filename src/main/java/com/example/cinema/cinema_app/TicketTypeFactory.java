@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 class TicketTypeFactory {
-
     public TicketType createTicketType(DiscountType discountType) {
         if (discountType == null) {
             return new RegularTicketType();

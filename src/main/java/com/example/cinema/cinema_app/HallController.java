@@ -18,13 +18,13 @@ public class HallController {
     public String getAllHalls(Model model) {
         List<Hall> halls = hallService.findAll();
         model.addAttribute("halls", halls);
-        return "halls/listHalls";
+        return "hall/listHalls";
     }
 
     @GetMapping("/add")
     public String showAddForm(Model model) {
         model.addAttribute("hallTypes", hallService.getAvailableHallTypes());
-        return "halls/addHall";
+        return "hall/addHall";
     }
 
     @PostMapping("/add")
@@ -35,7 +35,7 @@ public class HallController {
         } catch (Exception e) {
             model.addAttribute("error", "Ошибка при создании зала: " + e.getMessage());
             model.addAttribute("hallTypes", hallService.getAvailableHallTypes());
-            return "halls/addHall";
+            return "hall/addHall";
         }
     }
 
@@ -44,7 +44,7 @@ public class HallController {
         Hall hall = hallService.findById(id);
         model.addAttribute("hall", hall);
         model.addAttribute("hallTypes", hallService.getAvailableHallTypes());
-        return "halls/editHall";
+        return "hall/editHall";
     }
 
     @PostMapping("/edit/{id}")
@@ -52,7 +52,7 @@ public class HallController {
                              BindingResult result, Model model) {
         if (result.hasErrors()) {
             model.addAttribute("hallTypes", hallService.getAvailableHallTypes());
-            return "halls/editHall";
+            return "hall/editHall";
         }
 
         try {
@@ -61,7 +61,7 @@ public class HallController {
         } catch (Exception e) {
             model.addAttribute("error", "Ошибка при обновлении зала: " + e.getMessage());
             model.addAttribute("hallTypes", hallService.getAvailableHallTypes());
-            return "halls/editHall";
+            return "hall/editHall";
         }
     }
 

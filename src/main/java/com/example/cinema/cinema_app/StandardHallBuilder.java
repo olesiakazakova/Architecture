@@ -9,29 +9,13 @@ public class StandardHallBuilder extends HallBuilder {
     }
 
     @Override
-    public void buildBase() {
+    public Hall buildHall() {
         hall.setNumberSeats(100);
-    }
-
-    @Override
-    public void buildType() {
         hall.setHallType("STANDARD");
         hall.setDescription("Стандартный кинозал");
-    }
-
-    @Override
-    public void buildAmenities() {
         hall.setHas3d(false);
         hall.setHasDolby(false);
-    }
-
-    @Override
-    public void buildScreen() {
         hall.setScreenSize(10.0);
-    }
-
-    @Override
-    public Hall getHall() {
         return hall;
     }
 }

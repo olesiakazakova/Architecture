@@ -61,11 +61,11 @@ public class TicketController {
             model.addAttribute("users", userRepository.findAll());
             model.addAttribute("discountTypes", DiscountType.values());
 
-            return "session/listTickets";
+            return "ticket/listTickets";
 
         } catch (Exception e) {
             model.addAttribute("error", "Ошибка при загрузке билетов: " + e.getMessage());
-            return "session/listTickets";
+            return "ticket/listTickets";
         }
     }
 

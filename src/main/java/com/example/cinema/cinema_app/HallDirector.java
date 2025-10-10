@@ -15,10 +15,6 @@ public class HallDirector {
     }
 
     public Hall buildHall() {
-        builder.buildBase();
-        builder.buildType();
-        builder.buildAmenities();
-        builder.buildScreen();
-        return builder.getHall();
+        return builder.buildHall();
     }
 }

@@ -20,13 +20,13 @@ public class UserController {
     public String getAllUsers(Model model) {
         List<User> users = userRepository.findAll();
         model.addAttribute("users", users);
-        return "session/listUsers";
+        return "user/listUsers";
     }
 
     @GetMapping("/add")
     public String showAddUserForm(Model model) {
         model.addAttribute("user", new User());
-        return "session/addUser";
+        return "user/addUser";
     }
 
     @PostMapping("/add")
@@ -40,7 +40,7 @@ public class UserController {
     public String showEditUserForm(@RequestParam String email, Model model) {
         User user = userRepository.findByEmail(email);
         model.addAttribute("user", user);
-        return "session/editUser";
+        return "user/editUser";
     }
 
     @PostMapping("/edit")

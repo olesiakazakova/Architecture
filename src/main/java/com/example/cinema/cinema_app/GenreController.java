@@ -4,8 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,13 +23,13 @@ public class GenreController {
     public String listGenres(Model model) {
         List<Genre> genres = genreService.findAll();
         model.addAttribute("genres", genres);
-        return "film/listGenres";
+        return "genre/listGenres";
     }
 
     @GetMapping("/add")
     public String showAddForm(Model model) {
         model.addAttribute("genre", new Genre());
-        return "film/addGenres";
+        return "genre/addGenres";
     }
 
     @PostMapping("/add")
@@ -54,9 +52,9 @@ public class GenreController {
         if (optionalGenre.isPresent()) {
             Genre genre = optionalGenre.get();
             model.addAttribute("genre", genre);
-            return "film/editGenre";
+            return "genre/editGenre";
         }
-        return "films/error";
+        return "film/error";
     }
 
     @PostMapping("/edit")
@@ -68,7 +66,7 @@ public class GenreController {
             genreService.updateGenre(genreId, newGenre);
             return "redirect:/genres";
         }
-        return "films/error";
+        return "film/error";
     }
 
     @PostMapping("/delete")
