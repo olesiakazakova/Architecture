@@ -5,9 +5,12 @@ import org.springframework.ui.Model;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/sessions")
@@ -28,10 +31,25 @@ public class SessionController {
     @GetMapping()
     public String getAllSessions(Model model) {
         List<Session> sessions = sessionService.findAll();
-        Map<String, Object> flyweightStats = sessionService.getFlyweightStats();
 
-        model.addAttribute("sessions", sessions);
-        model.addAttribute("flyweightStats", flyweightStats);
+        model.addAttribute("sessionItems", sessions);
+
+        long scheduledCount = sessions.stream()
+                .filter(s -> s.getSessionState() == SessionStatus.SCHEDULED)
+                .count();
+        long activeCount = sessions.stream()
+                .filter(s -> s.getSessionState() == SessionStatus.ACTIVE)
+                .count();
+        long completedCount = sessions.stream()
+                .filter(s -> s.getSessionState() == SessionStatus.COMPLETED)
+                .count();
+
+        model.addAttribute("scheduledCount", scheduledCount);
+        model.addAttribute("activeCount", activeCount);
+        model.addAttribute("completedCount", completedCount);
+        model.addAttribute("totalCount", sessions.size());
+        model.addAttribute("sessionStates", SessionStatus.values());
+
         return "session/listSessions";
     }
 
@@ -48,11 +66,6 @@ public class SessionController {
         try {
             Session savedSession = sessionService.save(session);
             List<Ticket> tickets = sessionService.getTicketsForSession(savedSession.getSessionId());
-
-            Map<String, Object> stats = sessionService.getFlyweightStats();
-            redirectAttributes.addFlashAttribute("success",
-                    "Сеанс успешно создан! Создано " + tickets.size() + " билетов. " +
-                            "Flyweight cache: " + stats.get("cacheSize") + " films");
 
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error",
@@ -74,17 +87,16 @@ public class SessionController {
         return "session/sessionsByFilm";
     }
 
-    @GetMapping("/flyweight-stats")
-    @ResponseBody
-    public Map<String, Object> getFlyweightStats() {
-        return sessionService.getFlyweightStats();
-    }
-
-    // Остальные методы контроллера без изменений...
     @GetMapping("/edit/{sessionId}")
     public String showEditForm(@PathVariable UUID sessionId, Model model) {
         Session session = sessionService.findById(sessionId);
         if (session == null) {
+            return "redirect:/sessions";
+        }
+        // Проверяем можно ли редактировать сеанс
+        if (!session.canModifySession()) {
+            model.addAttribute("error",
+                    "Нельзя редактировать сеанс в текущем состоянии: " + session.getStatusMessage());
             return "redirect:/sessions";
         }
         model.addAttribute("session", session);

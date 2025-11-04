@@ -29,7 +29,7 @@ public class TicketController {
     private SessionService sessionService;
 
     @Autowired
-    private TicketTypeFactory ticketTypeFactory;
+    private TicketCommandManager commandManager;
 
     @GetMapping
     public String getAllTickets(Model model,
@@ -40,8 +40,6 @@ public class TicketController {
             if (sessionId != null) {
                 tickets = ticketRepository.findBySession_SessionIdOrderByRowAscSeatAsc(sessionId);
 
-                tickets.forEach(ticket -> ticket.setTicketTypeFactory(ticketTypeFactory));
-
                 Map<Integer, List<Ticket>> seatingChart = sessionService.getHallSeatingChart(sessionId);
                 model.addAttribute("seatingChart", seatingChart);
 
@@ -50,9 +48,58 @@ public class TicketController {
 
                 Session cinemaSession = sessionService.findById(sessionId);
                 model.addAttribute("cinemaSession", cinemaSession);
+
+                // Информация о возможности отмены для каждого билета
+                Map<UUID, Boolean> canCancelMap = new HashMap<>();
+                Map<UUID, String> cancelReasonMap = new HashMap<>();
+
+                for (Ticket ticket : tickets) {
+                    if (ticket.getIsPurchased()) {
+                        CancelTicketCommand cancelCommand = new CancelTicketCommand(ticketRepository, sessionService).initialize(ticket);
+                        canCancelMap.put(ticket.getTicketId(), cancelCommand.canExecute());
+                        cancelReasonMap.put(ticket.getTicketId(), cancelCommand.getCannotExecuteReason());
+                    }
+                }
+
+                model.addAttribute("canCancelMap", canCancelMap);
+                model.addAttribute("cancelReasonMap", cancelReasonMap);
             } else {
                 tickets = ticketRepository.findAll();
-                tickets.forEach(ticket -> ticket.setTicketTypeFactory(ticketTypeFactory));
+                tickets.sort((t1, t2) -> {
+                    if (t1.getIsPurchased() && !t2.getIsPurchased()) {
+                        return -1;
+                    }
+                    if (!t1.getIsPurchased() && t2.getIsPurchased()) {
+                        return 1;
+                    }
+                    if (!t1.getIsPurchased() && !t2.getIsPurchased()) {
+                        boolean canBuy1 = t1.getSession() != null && t1.getSession().canPurchaseTickets();
+                        boolean canBuy2 = t2.getSession() != null && t2.getSession().canPurchaseTickets();
+
+                        if (canBuy1 && !canBuy2) {
+                            return -1;
+                        }
+                        if (!canBuy1 && canBuy2) {
+                            return 1;
+                        }
+                    }
+
+                    UUID sessionId1 = t1.getSession() != null ? t1.getSession().getSessionId() : null;
+                    UUID sessionId2 = t2.getSession() != null ? t2.getSession().getSessionId() : null;
+
+                    if (sessionId1 != null && sessionId2 != null) {
+                        int sessionCompare = sessionId1.compareTo(sessionId2);
+                        if (sessionCompare != 0) {
+                            return sessionCompare;
+                        }
+                    }
+
+                    int rowCompare = Integer.compare(t1.getRow(), t2.getRow());
+                    if (rowCompare != 0) {
+                        return rowCompare;
+                    }
+                    return Integer.compare(t1.getSeat(), t2.getSeat());
+                });
             }
 
             model.addAttribute("tickets", tickets);
@@ -60,6 +107,8 @@ public class TicketController {
             model.addAttribute("selectedSessionId", sessionId);
             model.addAttribute("users", userRepository.findAll());
             model.addAttribute("discountTypes", DiscountType.values());
+            model.addAttribute("commandHistory", commandManager.getCommandHistory());
+            model.addAttribute("canUndo", commandManager.canUndo());
 
             return "ticket/listTickets";
 
@@ -82,30 +131,16 @@ public class TicketController {
             User user = userRepository.findById(userEmail)
                     .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
 
-            if (ticket.getIsPurchased()) {
-                redirectAttributes.addFlashAttribute("error", "Этот билет уже куплен");
-                return "redirect:/tickets?sessionId=" + ticket.getSession().getSessionId();
+            // Используем команду для покупки
+            CommandResult result = commandManager.executePurchase(ticket, user, discountType);
+
+            if (result.isSuccess()) {
+                redirectAttributes.addFlashAttribute("success", result.getMessage());
+            } else {
+                redirectAttributes.addFlashAttribute("error", result.getMessage());
             }
 
-            TicketType ticketType = ticketTypeFactory.createTicketType(discountType);
-            BigDecimal finalPrice = BigDecimal.ZERO;
-
-            if (ticket.getSession() != null && ticket.getSession().getCost() != null) {
-                finalPrice = ticketType.calculatePrice(ticket.getSession().getCost());
-            }
-
-            ticket.setUser(user);
-            ticket.setDiscount(discountType);
-            ticket.setIsPurchased(true);
-            ticket.setTicketTypeFactory(ticketTypeFactory);
-
-            ticketRepository.save(ticket);
-
-            redirectAttributes.addFlashAttribute("success",
-                    "Билет успешно куплен! " + ticketType.getTicketTypeName() +
-                            " - Цена: " + finalPrice + " ₽");
-
-            return "redirect:/tickets?sessionId=" + ticket.getSession().getSessionId();
+            return "redirect:/tickets";
 
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Ошибка при покупке билета: " + e.getMessage());
@@ -120,21 +155,50 @@ public class TicketController {
             Ticket ticket = ticketRepository.findById(ticketId)
                     .orElseThrow(() -> new IllegalArgumentException("Ticket not found"));
 
-            UUID sessionId = ticket.getSession().getSessionId();
+            // Используем команду для отмены
+            CommandResult result = commandManager.executeCancel(ticket);
 
-            ticket.setUser(null);
-            ticket.setDiscount(DiscountType.NO_DISCOUNT);
-            ticket.setIsPurchased(false);
+            if (result.isSuccess()) {
+                redirectAttributes.addFlashAttribute("success", result.getMessage());
+            } else {
+                redirectAttributes.addFlashAttribute("error", result.getMessage());
+            }
 
-            ticketRepository.save(ticket);
-
-            redirectAttributes.addFlashAttribute("success", "Покупка билета отменена");
-            return "redirect:/tickets?sessionId=" + sessionId;
+            return "redirect:/tickets";
 
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Ошибка при отмене билета: " + e.getMessage());
             return "redirect:/tickets";
         }
+    }
+
+    @PostMapping("/undo")
+    public String undoLastCommand(RedirectAttributes redirectAttributes) {
+        try {
+            CommandResult result = commandManager.undo();
+
+            if (result.isSuccess()) {
+                redirectAttributes.addFlashAttribute("success", result.getMessage());
+            } else {
+                redirectAttributes.addFlashAttribute("error", result.getMessage());
+            }
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ошибка при отмене операции: " + e.getMessage());
+        }
+
+        return "redirect:/tickets";
+    }
+
+    @PostMapping("/clear-history")
+    public String clearCommandHistory(RedirectAttributes redirectAttributes) {
+        try {
+            commandManager.clearHistory();
+            redirectAttributes.addFlashAttribute("success", "История операций очищена");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ошибка при очистке истории: " + e.getMessage());
+        }
+        return "redirect:/tickets";
     }
 
     @GetMapping("/calculate-price")
@@ -144,8 +208,8 @@ public class TicketController {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            TicketType ticketType = ticketTypeFactory.createTicketType(discountType);
-            BigDecimal finalPrice = ticketType.calculatePrice(basePrice);
+            PricingStrategy strategy = createPricingStrategy(discountType);
+            BigDecimal finalPrice = strategy.calculatePrice(basePrice);
             BigDecimal discountAmount = basePrice.subtract(finalPrice);
 
             result.put("success", true);
@@ -153,7 +217,7 @@ public class TicketController {
             result.put("finalPrice", finalPrice);
             result.put("discountAmount", discountAmount);
             result.put("discountPercent", discountAmount.divide(basePrice, 2, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)));
-            result.put("ticketTypeName", ticketType.getTicketTypeName());
+            result.put("ticketTypeName", strategy.getStrategyName());
 
         } catch (Exception e) {
             result.put("success", false);
@@ -161,5 +225,19 @@ public class TicketController {
         }
 
         return result;
+    }
+
+    private PricingStrategy createPricingStrategy(DiscountType discountType) {
+        switch (discountType) {
+            case STUDENT_DISCOUNT:
+                return new StudentPricingStrategy();
+            case CHILD_DISCOUNT:
+                return new ChildPricingStrategy();
+            case SENIOR_DISCOUNT:
+                return new SeniorPricingStrategy();
+            case NO_DISCOUNT:
+            default:
+                return new RegularPricingStrategy();
+        }
     }
 }

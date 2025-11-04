@@ -26,10 +26,8 @@ public class OrderController {
     @Autowired
     private TicketRepository ticketRepository;
 
-    // Отображение HTML страницы
     @GetMapping
     public String showOrdersPage(Model model) {
-        // Получаем ВСЕ заказы
         List<OrderComponent> allOrders = unifiedOrderService.getAllOrders();
         Map<String, Object> stats = unifiedOrderService.getOrderStatistics();
 
@@ -37,9 +35,8 @@ public class OrderController {
         model.addAttribute("users", userRepository.findAll());
         model.addAttribute("availableTickets", ticketRepository.findByIsPurchasedFalse());
 
-        // Добавляем всю статистику
         model.addAllAttributes(stats);
-        return "order/listOrder"; // возвращает orders.html
+        return "order/listOrder";
     }
 
     @PostMapping
@@ -48,10 +45,8 @@ public class OrderController {
                               @RequestParam List<UUID> ticketIds) {
         try {
             OrderComposite order = orderService.createOrder(orderName, userEmail, ticketIds);
-            // После успешного создания - редирект на страницу заказов
             return "redirect:/orders";
         } catch (Exception e) {
-            // В случае ошибки тоже редирект, но с параметром ошибки
             return "redirect:/orders?error=" + e.getMessage();
         }
     }
@@ -85,7 +80,6 @@ public class OrderController {
         return orderService.getOrderTickets(orderId);
     }
 
-    // Новые методы для HTML страницы
 
     @DeleteMapping("/{orderId}")
     @ResponseBody

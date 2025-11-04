@@ -3,11 +3,9 @@ package com.example.cinema.cinema_app;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -22,23 +20,14 @@ public class OrderService {
     @Autowired
     private UserRepository userRepository;
 
-    /**
-     * Получение всех заказов
-     */
     public List<OrderComposite> getAllOrders() {
         return orderRepository.findAll();
     }
 
-    /**
-     * Получение заказов пользователя
-     */
     public List<OrderComposite> getUserOrders(String userEmail) {
         return orderRepository.findByUser_Email(userEmail);
     }
 
-    /**
-     * Удаление заказа
-     */
     public void deleteOrder(UUID orderId) {
         if (!orderRepository.existsById(orderId)) {
             throw new IllegalArgumentException("Заказ не найден: " + orderId);
@@ -46,9 +35,7 @@ public class OrderService {
         orderRepository.deleteById(orderId);
     }
 
-    /**
-     * Создание заказа из билетов
-     */
+    @Transactional
     public OrderComposite createOrder(String orderName, String userEmail, List<UUID> ticketIds) {
         User user = userRepository.findById(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден: " + userEmail));
@@ -64,23 +51,23 @@ public class OrderService {
             if (ticket.getIsPurchased()) {
                 throw new IllegalStateException("Билет уже куплен: " + ticket.getTicketId());
             }
+            ticket.setIsPurchased(true);
         }
 
         order.setTickets(tickets);
-        return orderRepository.save(order);
+
+        OrderComposite savedOrder = orderRepository.save(order);
+
+        ticketRepository.saveAll(tickets);
+
+        return savedOrder;
     }
 
-    /**
-     * Получение заказа с загруженными компонентами
-     */
     public OrderComposite getOrderById(UUID orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Заказ не найден: " + orderId));
     }
 
-    /**
-     * Покупка заказа
-     */
     public OrderComposite purchaseOrder(UUID orderId) {
         OrderComposite order = getOrderById(orderId);
 
@@ -95,25 +82,16 @@ public class OrderService {
         return savedOrder;
     }
 
-    /**
-     * Получение общей стоимости заказа
-     */
     public BigDecimal getOrderTotalPrice(UUID orderId) {
         OrderComposite order = getOrderById(orderId);
         return order.getTotalPrice();
     }
 
-    /**
-     * Получение всех билетов заказа
-     */
     public List<Ticket> getOrderTickets(UUID orderId) {
         OrderComposite order = getOrderById(orderId);
         return order.getAllTickets();
     }
 
-    /**
-     * Добавление билета в существующий заказ
-     */
     public OrderComposite addTicketToOrder(UUID orderId, UUID ticketId) {
         OrderComposite order = getOrderById(orderId);
 
@@ -132,9 +110,6 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    /**
-     * Удаление билета из заказа
-     */
     public OrderComposite removeTicketFromOrder(UUID orderId, UUID ticketId) {
         OrderComposite order = getOrderById(orderId);
 

@@ -57,7 +57,6 @@ public class TicketAdapter implements OrderComponent {
         return ticket.getUser();
     }
 
-    // Дополнительные методы для удобства
     public Ticket getTicket() {
         return ticket;
     }

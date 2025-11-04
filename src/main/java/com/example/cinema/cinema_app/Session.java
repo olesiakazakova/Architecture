@@ -1,10 +1,9 @@
 package com.example.cinema.cinema_app;
 
 import jakarta.persistence.*;
-
+import com.example.cinema.cinema_app.SessionStatus;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -43,6 +42,85 @@ public class Session {
     @Transient
     private FilmService filmService;
 
+    // Вычисляем состояние на основе времени
+    public SessionStatus getSessionState() {
+        if (film == null || date == null || startTime == null) {
+            return SessionStatus.SCHEDULED;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime sessionDateTime = LocalDateTime.of(date.toLocalDate(), startTime);
+        LocalDateTime sessionEndTime = getEndDateTime();
+
+        if (now.isBefore(sessionDateTime)) {
+            return SessionStatus.SCHEDULED;
+        } else if (now.isAfter(sessionDateTime) && now.isBefore(sessionEndTime)) {
+            return SessionStatus.ACTIVE;
+        } else {
+            return SessionStatus.COMPLETED;
+        }
+    }
+
+    // Создаем состояние
+    private SessionState createSessionState() {
+        SessionStatus status = getSessionState();
+        switch (status) {
+            case SCHEDULED:
+                return new ScheduledSessionState();
+            case ACTIVE:
+                return new ActiveSessionState();
+            case COMPLETED:
+                return new CompletedSessionState();
+            default:
+                return new ScheduledSessionState();
+        }
+    }
+
+    public boolean canPurchaseTickets() {
+        SessionState state = createSessionState();
+        return state.canPurchaseTickets();
+    }
+
+    public boolean canCancelTickets() {
+        SessionState state = createSessionState();
+        return state.canCancelTickets();
+    }
+
+    public boolean canModifySession() {
+        SessionState state = createSessionState();
+        return state.canModifySession();
+    }
+
+    public String getStatusMessage() {
+        SessionState state = createSessionState();
+        return state.getStatusMessage();
+    }
+
+    public LocalDateTime getEndDateTime() {
+        if (film == null || date == null || startTime == null) {
+            return null;
+        }
+        return LocalDateTime.of(date.toLocalDate(), startTime)
+                .plusMinutes(film.getDuration());
+    }
+
+    public boolean isSessionInFuture() {
+        LocalDateTime sessionDateTime = LocalDateTime.of(date.toLocalDate(), startTime);
+        return LocalDateTime.now().isBefore(sessionDateTime);
+    }
+
+    public boolean isSessionActive() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime sessionDateTime = LocalDateTime.of(date.toLocalDate(), startTime);
+        LocalDateTime sessionEndTime = getEndDateTime();
+        return now.isAfter(sessionDateTime) && now.isBefore(sessionEndTime);
+    }
+
+    public boolean isSessionCompleted() {
+        LocalDateTime sessionEndTime = getEndDateTime();
+        return sessionEndTime != null && LocalDateTime.now().isAfter(sessionEndTime);
+    }
+
     public Session() {
     }
 
@@ -54,32 +132,27 @@ public class Session {
         this.cost = cost;
     }
 
-    // Метод для инициализации Flyweight зависимостей
     public void initFlyweight(FilmFlyweightFactory factory, FilmService service) {
         this.filmFactory = factory;
         this.filmService = service;
 
-        // Кэшируем фильм при инициализации
         if (this.film != null && this.film.getFilmId() != null) {
             factory.putFilm(this.film);
         }
     }
 
-    // Геттер, который использует Flyweight при наличии фабрики
     public Film getFilm() {
         if (filmFactory != null && film != null && film.getFilmId() != null) {
             Film cachedFilm = filmFactory.getFilm(film.getFilmId());
             if (cachedFilm != null) {
                 return cachedFilm;
             } else {
-                // Если фильма нет в кэше, добавляем его
                 filmFactory.putFilm(film);
             }
         }
         return film;
     }
 
-    // Сеттер, который обновляет кэш
     public void setFilm(Film film) {
         this.film = film;
         if (filmFactory != null && film != null && film.getFilmId() != null) {
@@ -87,7 +160,6 @@ public class Session {
         }
     }
 
-    // Геттер для прямого доступа к filmId (полезно для оптимизации)
     public Long getFilmId() {
         return film != null ? film.getFilmId() : null;
     }

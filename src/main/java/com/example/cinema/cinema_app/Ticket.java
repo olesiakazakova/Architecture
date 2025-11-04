@@ -31,9 +31,6 @@ public class Ticket implements Copyable {
     @Column(name = "is_purchased", nullable = false)
     private boolean isPurchased = false;
 
-    @Transient
-    private TicketTypeFactory ticketTypeFactory;
-
     public Ticket() {}
 
     public Ticket(Session session, int row, int seat) {
@@ -66,35 +63,21 @@ public class Ticket implements Copyable {
     public boolean getIsPurchased() { return isPurchased; }
     public void setIsPurchased(boolean isPurchased) { this.isPurchased = isPurchased; }
 
-    public TicketTypeFactory getTicketTypeFactory() { return ticketTypeFactory; }
-    public void setTicketTypeFactory(TicketTypeFactory ticketTypeFactory) {
-        this.ticketTypeFactory = ticketTypeFactory;
+    public UUID getSessionId() {
+        return session != null ? session.getSessionId() : null;
     }
 
-    public TicketType getTicketType() {
-        // ВСЕГДА создаем TicketType напрямую, игнорируем фабрику если она null
-        DiscountType discountType = this.discount != null ? this.discount : DiscountType.NO_DISCOUNT;
-
-        // Если фабрика доступна, используем ее
-        if (ticketTypeFactory != null) {
-            return ticketTypeFactory.createTicketType(discountType);
-        }
-
-        // Иначе создаем вручную
-        return createTicketTypeManually(discountType);
-    }
-
-    private TicketType createTicketTypeManually(DiscountType discountType) {
-        switch (discountType) {
+    private PricingStrategy createPricingStrategy() {
+        switch (discount) {
             case STUDENT_DISCOUNT:
-                return new StudentTicketType();
+                return new StudentPricingStrategy();
             case CHILD_DISCOUNT:
-                return new ChildTicketType();
+                return new ChildPricingStrategy();
             case SENIOR_DISCOUNT:
-                return new SeniorTicketType();
+                return new SeniorPricingStrategy();
             case NO_DISCOUNT:
             default:
-                return new RegularTicketType();
+                return new RegularPricingStrategy();
         }
     }
 
@@ -103,16 +86,13 @@ public class Ticket implements Copyable {
             if (session == null || session.getCost() == null) {
                 return BigDecimal.ZERO;
             }
-            TicketType ticketType = getTicketType();
-            return ticketType.calculatePrice(session.getCost());
+
+            PricingStrategy strategy = createPricingStrategy();
+            return strategy.calculatePrice(session.getCost());
+
         } catch (Exception e) {
-            // В случае любой ошибки возвращаем базовую цену
             return session != null && session.getCost() != null ? session.getCost() : BigDecimal.ZERO;
         }
-    }
-
-    public UUID getSessionId() {
-        return session != null ? session.getSessionId() : null;
     }
 
     @Override
@@ -121,7 +101,6 @@ public class Ticket implements Copyable {
         copy.session = this.session;
         copy.discount = this.discount;
         copy.isPurchased = this.isPurchased;
-        copy.ticketTypeFactory = this.ticketTypeFactory;
         return copy;
     }
 }

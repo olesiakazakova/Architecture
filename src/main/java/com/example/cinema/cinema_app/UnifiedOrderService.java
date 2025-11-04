@@ -18,32 +18,24 @@ public class UnifiedOrderService {
     @Autowired
     private TicketRepository ticketRepository;
 
-    /**
-     * Получить все заказы - и композитные и одиночные
-     */
     public List<OrderComponent> getAllOrders() {
         List<OrderComponent> allOrders = new ArrayList<>();
 
-        // 1. Композитные заказы
         List<OrderComposite> compositeOrders = orderService.getAllOrders();
         allOrders.addAll(compositeOrders);
 
-        // 2. Одиночные заказы (билеты, купленные напрямую)
         List<Ticket> purchasedTickets = ticketRepository.findByIsPurchasedTrue();
         for (Ticket ticket : purchasedTickets) {
-            // Проверяем, что билет не входит в составной заказ
             if (!isTicketInCompositeOrder(ticket, compositeOrders)) {
                 allOrders.add(new TicketAdapter(ticket));
             }
         }
 
-        // Сортируем по дате создания (новые сначала)
         allOrders.sort((o1, o2) -> {
             if (o1 instanceof OrderComposite && o2 instanceof OrderComposite) {
                 return ((OrderComposite) o2).getCreatedAt()
                         .compareTo(((OrderComposite) o1).getCreatedAt());
             }
-            // Для одиночных можно использовать дату сессии или текущую дату
             return 0;
         });
 
@@ -56,9 +48,6 @@ public class UnifiedOrderService {
                 .anyMatch(orderTicket -> orderTicket.getTicketId().equals(ticket.getTicketId()));
     }
 
-    /**
-     * Получить статистику по всем заказам
-     */
     public Map<String, Object> getOrderStatistics() {
         List<OrderComponent> allOrders = getAllOrders();
 
@@ -66,11 +55,9 @@ public class UnifiedOrderService {
         stats.put("totalOrders", allOrders.size());
         stats.put("activeOrders", allOrders.stream().filter(order -> !order.isPurchased()).count());
 
-        // ВРЕМЕННО - не рассчитываем выручку
         stats.put("totalRevenue", BigDecimal.ZERO);
         stats.put("averageOrderValue", BigDecimal.ZERO);
 
-        // Раздельная статистика
         stats.put("compositeOrdersCount", allOrders.stream()
                 .filter(order -> order instanceof OrderComposite)
                 .count());

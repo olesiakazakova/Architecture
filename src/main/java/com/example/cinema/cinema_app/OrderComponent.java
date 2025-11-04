@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-// Базовый интерфейс для всех компонентов заказа
 public interface OrderComponent {
     UUID getId();
     String getName();
@@ -33,7 +32,6 @@ public interface OrderComponent {
         return getType().equals("SINGLE");
     }
 
-    // Композитные методы
     default void addComponent(OrderComponent component) {
         throw new UnsupportedOperationException("Операция не поддерживается");
     }

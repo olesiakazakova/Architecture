@@ -4,6 +4,8 @@ import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -27,22 +29,17 @@ public class SessionService {
 
     @PostConstruct
     public void init() {
-        // Предзагрузка всех фильмов при старте приложения
         preloadAllFilms();
     }
 
     private void preloadAllFilms() {
         List<Film> allFilms = filmService.findAll();
         filmFactory.preloadFilms(allFilms);
-        System.out.println("Preloaded " + allFilms.size() + " films into Flyweight cache");
     }
 
     public List<Session> findAll() {
         List<Session> sessions = sessionRepository.findAll();
-
-        // Инициализируем Flyweight для всех сеансов
         sessions.forEach(session -> session.initFlyweight(filmFactory, filmService));
-
         return sessions;
     }
 
@@ -56,17 +53,14 @@ public class SessionService {
 
     @Transactional
     public Session save(Session session) {
-        // Инициализируем Flyweight перед сохранением
         session.initFlyweight(filmFactory, filmService);
 
-        // Убеждаемся, что фильм находится в кэше
         if (session.getFilm() != null) {
             filmFactory.putFilm(session.getFilm());
         }
 
         Session savedSession = sessionRepository.save(session);
         createTicketsForSession(savedSession);
-
         return savedSession;
     }
 
@@ -75,9 +69,10 @@ public class SessionService {
     public Session update(UUID sessionId, Session sessionDetails) {
         return sessionRepository.findById(sessionId)
                 .map(session -> {
+                    if (!session.canModifySession()) {
+                        throw new IllegalStateException("Нельзя изменять сеанс в текущем состоянии: " + session.getStatusMessage());
+                    }
                     Hall oldHall = session.getHall();
-
-                    // Обновляем фильм и кэшируем его
                     session.setFilm(sessionDetails.getFilm());
                     filmFactory.putFilm(sessionDetails.getFilm());
 
@@ -98,17 +93,18 @@ public class SessionService {
     }
 
     public void delete(UUID id) {
+        Session session = findById(id);
+        if (session != null && !session.canModifySession()) {
+            throw new IllegalStateException("Нельзя удалить сеанс в текущем состоянии: " + session.getStatusMessage());
+        }
         sessionRepository.deleteById(id);
     }
 
-    // Метод для массового создания сеансов с оптимизацией Flyweight
     @Transactional
     public List<Session> createSessionsForFilm(Film film, List<Session> sessionTemplates) {
-        // Кэшируем фильм один раз
         filmFactory.putFilm(film);
 
         List<Session> savedSessions = new ArrayList<>();
-
         for (Session template : sessionTemplates) {
             template.setFilm(film);
             template.initFlyweight(filmFactory, filmService);
@@ -117,55 +113,103 @@ public class SessionService {
             createTicketsForSession(savedSession);
             savedSessions.add(savedSession);
         }
-
-        System.out.println("Created " + savedSessions.size() + " sessions for film: " + film.getName());
-        System.out.println("Flyweight cache size: " + filmFactory.getCacheSize());
-
         return savedSessions;
     }
 
-    // Метод для получения сеансов по фильму с Flyweight оптимизацией
     public List<Session> findByFilmId(Long filmId) {
-        // Загружаем фильм через Flyweight
         Film film = filmFactory.getOrLoadFilm(filmId, filmService);
-
         List<Session> sessions = sessionRepository.findByFilm_FilmId(filmId);
-
-        // Устанавливаем общий фильм для всех сеансов
         sessions.forEach(session -> {
-            session.setFilm(film); // Используем один экземпляр
+            session.setFilm(film);
             session.initFlyweight(filmFactory, filmService);
         });
 
         return sessions;
     }
 
-    // Метод для получения статистики по использованию Flyweight
-    public Map<String, Object> getFlyweightStats() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("cacheSize", filmFactory.getCacheSize());
-
-        List<Session> allSessions = sessionRepository.findAll();
-        long uniqueFilms = allSessions.stream()
-                .map(Session::getFilmId)
-                .distinct()
-                .count();
-
-        stats.put("totalSessions", allSessions.size());
-        stats.put("uniqueFilms", uniqueFilms);
-        stats.put("memorySavings", calculateMemorySavings(allSessions.size(), (int) uniqueFilms));
-
-        return stats;
+    public List<Session> findSessionsByState(SessionStatus state) {
+        List<Session> allSessions = findAll();
+        return allSessions.stream()
+                .filter(session -> session.getSessionState() == state)
+                .collect(Collectors.toList());
     }
 
-    private String calculateMemorySavings(int totalSessions, int uniqueFilms) {
-        // Примерная оценка экономии памяти
-        int estimatedFilmSize = 500; // bytes per Film object
-        int withoutFlyweight = totalSessions * estimatedFilmSize;
-        int withFlyweight = uniqueFilms * estimatedFilmSize;
-        int savings = withoutFlyweight - withFlyweight;
+    public List<Session> findActiveSessions() {
+        return findSessionsByState(SessionStatus.ACTIVE);
+    }
 
-        return String.format("Saved approximately %d KB memory", savings / 1024);
+    public List<Session> findScheduledSessions() {
+        return findSessionsByState(SessionStatus.SCHEDULED);
+    }
+
+    public List<Session> findCompletedSessions() {
+        return findSessionsByState(SessionStatus.COMPLETED);
+    }
+
+    public boolean canPurchaseTickets(UUID sessionId) {
+        Session session = findById(sessionId);
+        return session != null && session.canPurchaseTickets();
+    }
+
+    public boolean canCancelTickets(UUID sessionId) {
+        Session session = findById(sessionId);
+        return session != null && session.canCancelTickets();
+    }
+
+    public boolean canModifySession(UUID sessionId) {
+        Session session = findById(sessionId);
+        return session != null && session.canModifySession();
+    }
+
+    public String getSessionStatusMessage(UUID sessionId) {
+        Session session = findById(sessionId);
+        return session != null ? session.getStatusMessage() : "Сеанс не найден";
+    }
+
+    @Transactional
+    public Ticket purchaseTicket(UUID sessionId, UUID ticketId, User user, DiscountType discountType) {
+        Session session = findById(sessionId);
+        if (session == null) {
+            throw new IllegalArgumentException("Сеанс не найден");
+        }
+
+        if (!session.canPurchaseTickets()) {
+            throw new IllegalStateException("Нельзя покупать билеты для этого сеанса: " + session.getStatusMessage());
+        }
+
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new IllegalArgumentException("Билет не найден"));
+
+        if (ticket.getIsPurchased()) {
+            throw new IllegalStateException("Билет уже куплен");
+        }
+
+        ticket.setUser(user);
+        ticket.setDiscount(discountType);
+        ticket.setIsPurchased(true);
+
+        return ticketRepository.save(ticket);
+    }
+
+    @Transactional
+    public void cancelTicketPurchase(UUID sessionId, UUID ticketId) {
+        Session session = findById(sessionId);
+        if (session == null) {
+            throw new IllegalArgumentException("Сеанс не найден");
+        }
+
+        if (!session.canCancelTickets()) {
+            throw new IllegalStateException("Нельзя отменять билеты для этого сеанса: " + session.getStatusMessage());
+        }
+
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new IllegalArgumentException("Билет не найден"));
+
+        ticket.setUser(null);
+        ticket.setDiscount(DiscountType.NO_DISCOUNT);
+        ticket.setIsPurchased(false);
+
+        ticketRepository.save(ticket);
     }
 
 

@@ -349,6 +349,45 @@
             font-size: 0.8rem;
         }
     }
+
+    /* Стили для управления командами */
+    .command-controls .card {
+        border-left: 4px solid #6f42c1;
+    }
+
+    .command-history {
+        max-height: 120px;
+        overflow-y: auto;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        padding: 8px;
+        background-color: #f8f9fa;
+    }
+
+    .command-item {
+        padding: 2px 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .command-item:last-child {
+        border-bottom: none;
+    }
+
+    /* Стили для статусов сеанса */
+    .session-status {
+        margin-top: 8px;
+    }
+
+    /* Стили для заблокированных кнопок */
+    .btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    /* Подсказки для кнопок */
+    [title] {
+        cursor: help;
+    }
   </style>
 </head>
 <body>
@@ -363,6 +402,46 @@
 
 <div class="container mt-4">
   <h1 class="mb-4">Управление билетами</h1>
+  <!-- Управление командами (отмена/повтор) -->
+  <div th:if="${commandHistory != null and !commandHistory.isEmpty()}" class="command-controls mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0">История операций</h6>
+      </div>
+      <div class="card-body">
+        <!-- Кнопки управления -->
+        <div class="d-flex gap-2 mb-3">
+          <form th:action="@{/tickets/undo}" method="post" class="d-inline">
+            <button type="submit" class="btn btn-warning btn-sm"
+                    th:disabled="${!canUndo}">
+              ⬅️ Отменить последнюю операцию
+            </button>
+          </form>
+          <form th:action="@{/tickets/redo}" method="post" class="d-inline">
+            <button type="submit" class="btn btn-info btn-sm"
+                    th:disabled="${!canRedo}">
+              ➡️ Повторить операцию
+            </button>
+          </form>
+          <form th:action="@{/tickets/clear-history}" method="post" class="d-inline">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">
+              🗑️ Очистить историю
+            </button>
+          </form>
+        </div>
+
+        <!-- История команд -->
+        <div class="command-history">
+          <small class="text-muted d-block mb-2">Последние операции:</small>
+          <div th:each="command, iter : ${commandHistory}"
+               class="command-item small text-truncate"
+               th:classappend="${iter.index == 0} ? 'text-primary fw-bold' : 'text-muted'">
+            <span th:text="${command}">Операция</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Фильтр по сеансам -->
   <div class="filter-section">
@@ -410,6 +489,24 @@
       <p th:text="'Зал: ' + ${cinemaSession.hall.hallId} + ' | Всего мест: ' + ${cinemaSession.hall.numberSeats}"></p>
       <p th:if="${cinemaSession.cost != null}"
          th:text="'Базовая цена: ' + ${#numbers.formatDecimal(cinemaSession.cost, 1, 'DEFAULT', 2, 'DEFAULT')} + ' ₽'"></p>
+
+      <!-- Статус сеанса - исправленная версия -->
+      <div th:if="${cinemaSession.sessionState != null}" class="session-status">
+        <th:block th:switch="${cinemaSession.sessionState}">
+            <span th:case="SCHEDULED" class="badge bg-success"
+                  th:text="${cinemaSession.sessionState.description}">Запланирован</span>
+          <span th:case="ACTIVE" class="badge bg-warning"
+                th:text="${cinemaSession.sessionState.description}">Активен</span>
+          <span th:case="COMPLETED" class="badge bg-secondary"
+                th:text="${cinemaSession.sessionState.description}">Завершен</span>
+        </th:block>
+        <small class="text-muted ms-2" th:text="${cinemaSession.statusMessage}"></small>
+      </div>
+
+      <!-- Информация о возможности операций -->
+      <div th:if="${!cinemaSession.canPurchaseTickets()}" class="alert alert-warning mt-2">
+        <small th:text="${cinemaSession.statusMessage}"></small>
+      </div>
     </div>
 
     <div class="hall-layout">
@@ -444,10 +541,11 @@
                class="seat"
                th:classappend="${ticket.isPurchased} ? 'occupied' : 'available'"
                th:attr="data-ticketid=${ticket.ticketId},
-                        data-row=${ticket.row},
-                        data-seat=${ticket.seat},
-                        data-sessionid=${ticket.session.sessionId}"
-               th:onclick="${ticket.isPurchased} ? '' : 'selectSeat(this)'">
+                      data-row=${ticket.row},
+                      data-seat=${ticket.seat},
+                      data-sessionid=${ticket.session.sessionId},
+                      data-session-state=${ticket.session.sessionState}"
+               onclick="handleSeatClick(this)">
             [[${ticket.seat}]]
           </div>
         </div>
@@ -519,17 +617,49 @@
             <span th:unless="${ticket.isPurchased}" class="badge bg-warning">Свободен</span>
           </td>
           <td>
-            <div th:if="${ticket.isPurchased}">
-              <form th:action="@{/tickets/cancel}" method="post" class="d-inline">
-                <input type="hidden" name="ticketId" th:value="${ticket.ticketId}"/>
-                <button type="submit" class="btn btn-warning btn-sm"
-                        onclick="return confirm('Отменить покупку этого билета?')">
-                  Отменить
-                </button>
-              </form>
-            </div>
-            <div th:unless="${ticket.isPurchased}">
-              <span class="text-muted">Свободен</span>
+            <div class="actions">
+              <!-- Кнопка КУПИТЬ для свободных билетов -->
+              <th:block th:if="${!ticket.isPurchased}">
+                <th:block th:if="${ticket.session != null and ticket.session.canPurchaseTickets()}">
+                  <button class="btn btn-success btn-sm"
+                          data-bs-toggle="modal"
+                          data-bs-target="#purchaseModal"
+                          th:attr="data-ticket-id=${ticket.ticketId},
+                                 data-row=${ticket.row},
+                                 data-seat=${ticket.seat},
+                                 data-session-id=${ticket.session.sessionId}"
+                          onclick="preparePurchaseModal(this)">
+                    Купить
+                  </button>
+                </th:block>
+                <th:block th:unless="${ticket.session != null and ticket.session.canPurchaseTickets()}">
+                  <button class="btn btn-outline-secondary btn-sm"
+                          th:title="${ticket.session != null ? ticket.session.statusMessage : 'Сеанс не найден'}"
+                          disabled>
+                    Купить
+                  </button>
+                </th:block>
+              </th:block>
+
+              <!-- Кнопка ОТМЕНИТЬ для купленных билетов -->
+              <th:block th:if="${ticket.isPurchased}">
+                <th:block th:if="${canCancelMap != null and canCancelMap.get(ticket.ticketId)}">
+                  <form th:action="@{/tickets/cancel}" method="post" class="d-inline">
+                    <input type="hidden" name="ticketId" th:value="${ticket.ticketId}"/>
+                    <button type="submit" class="btn btn-warning btn-sm"
+                            onclick="return confirm('Вы уверены, что хотите отменить покупку этого билета?')">
+                      Отменить
+                    </button>
+                  </form>
+                </th:block>
+                <th:block th:unless="${canCancelMap != null and canCancelMap.get(ticket.ticketId)}">
+                  <button class="btn btn-outline-secondary btn-sm"
+                          th:title="${cancelReasonMap != null ? cancelReasonMap.get(ticket.ticketId) : 'Отмена невозможна'}"
+                          disabled>
+                    Отменить
+                  </button>
+                </th:block>
+              </th:block>
             </div>
           </td>
         </tr>
@@ -667,12 +797,39 @@
     }
   };
 
+  // Функция обработки клика по месту
+  function handleSeatClick(element) {
+    const isPurchased = element.classList.contains('occupied');
+    const sessionState = element.getAttribute('data-session-state');
+
+    // Если место уже куплено - ничего не делаем
+    if (isPurchased) {
+        return;
+    }
+
+    // Проверяем состояние сеанса
+    if (sessionState !== 'SCHEDULED') {
+        alert('❌ Покупка билетов возможна только для запланированных сеансов');
+        return;
+    }
+
+    // Если все проверки пройдены - выбираем место
+    selectSeat(element);
+  }
+
   // Функция выбора места
   function selectSeat(element) {
+    // Дополнительная проверка на всякий случай
+    const sessionState = element.getAttribute('data-session-state');
+    if (sessionState !== 'SCHEDULED') {
+        alert('❌ Нельзя выбрать место для этого сеанса');
+        return;
+    }
+
     // Сбрасываем предыдущее выделение
     if (selectedSeat) {
-      selectedSeat.classList.remove('selected');
-      selectedSeat.classList.add('available');
+        selectedSeat.classList.remove('selected');
+        selectedSeat.classList.add('available');
     }
 
     // Выделяем новое место
@@ -693,16 +850,16 @@
     // Получаем базовую цену из данных сеанса
     const basePriceElement = document.querySelector('[th\\:text*="Базовая цена"]');
     if (basePriceElement) {
-      const priceText = basePriceElement.textContent;
-      const priceMatch = priceText.match(/(\d+[.,]\d+)/);
-      if (priceMatch) {
-        currentBasePrice = parseFloat(priceMatch[1].replace(',', '.'));
-      }
+        const priceText = basePriceElement.textContent;
+        const priceMatch = priceText.match(/(\d+[.,]\d+)/);
+        if (priceMatch) {
+            currentBasePrice = parseFloat(priceMatch[1].replace(',', '.'));
+        }
     }
 
     // Если цена не найдена в сеансе, используем значение по умолчанию
     if (!currentBasePrice || isNaN(currentBasePrice)) {
-      currentBasePrice = 500; // Цена по умолчанию
+        currentBasePrice = 500; // Цена по умолчанию
     }
 
     // Обновляем отображение цены
@@ -805,8 +962,41 @@
     });
   }
 
-  // Раскомментируйте для тестирования:
-  // testPriceCalculation();
+  // Функция подготовки модального окна покупки
+  function preparePurchaseModal(button) {
+    const ticketId = button.getAttribute('data-ticket-id');
+    const row = button.getAttribute('data-row');
+    const seat = button.getAttribute('data-seat');
+    const sessionId = button.getAttribute('data-session-id');
+
+    // Устанавливаем значения в скрытые поля
+    document.getElementById('purchaseTicketId').value = ticketId;
+
+    // Обновляем информацию в модальном окне
+    document.getElementById('modalSeatInfo').textContent = `Ряд ${row}, Место ${seat}`;
+
+    // Получаем базовую цену
+    let basePrice = 500; // Цена по умолчанию
+
+    // Пытаемся найти цену в таблице
+    const priceCell = button.closest('tr').querySelector('td:nth-child(6)');
+    if (priceCell) {
+        const priceText = priceCell.textContent.trim();
+        const priceMatch = priceText.match(/(\d+[.,]\d+)/);
+        if (priceMatch) {
+            basePrice = parseFloat(priceMatch[1].replace(',', '.'));
+        }
+    }
+
+    currentBasePrice = basePrice;
+
+    // Сбрасываем форму
+    document.getElementById('userEmail').selectedIndex = 0;
+    document.getElementById('discountType').selectedIndex = 0;
+
+    // Обновляем отображение цены
+    updatePriceDisplay();
+  }
 </script>
 </body>
 </html>

@@ -35,7 +35,6 @@ public class OrderComposite implements OrderComponent {
     @Column(name = "is_purchased", nullable = false)
     private boolean purchased = false;
 
-    // Прямая связь с билетами через JPA
     @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "order_tickets",
@@ -65,7 +64,6 @@ public class OrderComposite implements OrderComponent {
     @PostPersist
     @PostUpdate
     private void initializeComponents() {
-        // Автоматически создаем адаптеры для билетов
         components.clear();
         if (tickets != null) {
             for (Ticket ticket : tickets) {
@@ -115,9 +113,11 @@ public class OrderComposite implements OrderComponent {
         initializeComponents();
         components.forEach(OrderComponent::markAsPurchased);
 
-        // Также помечаем билеты как купленные
+        // Помечаем билеты как купленные
         if (tickets != null) {
-            tickets.forEach(ticket -> ticket.setIsPurchased(true));
+            for (Ticket ticket : tickets) {
+                ticket.setIsPurchased(true);
+            }
         }
     }
 
@@ -128,8 +128,6 @@ public class OrderComposite implements OrderComponent {
     public void addComponent(OrderComponent component) {
         initializeComponents();
         components.add(component);
-
-        // Если добавляем адаптер билета, добавляем и сам билет
         if (component instanceof TicketAdapter) {
             TicketAdapter adapter = (TicketAdapter) component;
             tickets.add(adapter.getTicket());
@@ -140,8 +138,6 @@ public class OrderComposite implements OrderComponent {
     public void removeComponent(OrderComponent component) {
         initializeComponents();
         components.remove(component);
-
-        // Если удаляем адаптер билета, удаляем и сам билет
         if (component instanceof TicketAdapter) {
             TicketAdapter adapter = (TicketAdapter) component;
             tickets.remove(adapter.getTicket());
@@ -154,7 +150,6 @@ public class OrderComposite implements OrderComponent {
         return new ArrayList<>(components);
     }
 
-    // Прямые методы для работы с билетами
     public void addTicket(Ticket ticket) {
         if (tickets == null) {
             tickets = new ArrayList<>();
@@ -173,7 +168,6 @@ public class OrderComposite implements OrderComponent {
         );
     }
 
-    // Геттеры и сеттеры для JPA
     public void setId(UUID id) { this.id = id; }
     public void setName(String name) { this.name = name; }
     public void setDescription(String description) { this.description = description; }
