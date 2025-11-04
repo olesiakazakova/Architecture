@@ -54,13 +54,12 @@
 
 	<build>
 		<plugins>
-			<!-- Плагин для сборки Spring Boot -->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-				<!-- Опционально: укажите версию плагина -->
-				<!-- Если версия не указана, будет использоваться версия из родительского POM -->
-				<!--<version>x.x.x</version>-->
+				<configuration>
+					<mainClass>com.example.cinema.cinema_app.CinemaAppApplication</mainClass>
+				</configuration>
 			</plugin>
 
 		</plugins>
