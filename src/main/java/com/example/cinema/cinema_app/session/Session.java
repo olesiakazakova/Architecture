@@ -3,12 +3,12 @@ package com.example.cinema.cinema_app.session;
 import com.example.cinema.cinema_app.session.state.*;
 import com.example.cinema.cinema_app.ticket.Ticket;
 import com.example.cinema.cinema_app.film.Film;
-import com.example.cinema.cinema_app.film.FilmFlyweightFactory;
 import com.example.cinema.cinema_app.film.service.FilmService;
 import com.example.cinema.cinema_app.hall.Hall;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -42,12 +42,19 @@ public class Session {
     private List<Ticket> tickets = new ArrayList<>();
 
     @Transient
-    private FilmFlyweightFactory filmFactory;
-
-    @Transient
     private FilmService filmService;
 
-    // Вычисляем состояние на основе времени
+    public Session() {
+    }
+
+    public Session(Film film, Hall hall, java.sql.Date date, java.time.LocalTime startTime, java.math.BigDecimal cost) {
+        this.film = film;
+        this.hall = hall;
+        this.date = date;
+        this.startTime = startTime;
+        this.cost = cost;
+    }
+
     public SessionStatus getSessionState() {
         if (film == null || date == null || startTime == null) {
             return SessionStatus.SCHEDULED;
@@ -57,14 +64,30 @@ public class Session {
         LocalDateTime sessionDateTime = LocalDateTime.of(date.toLocalDate(), startTime);
         LocalDateTime sessionEndTime = getEndDateTime();
 
+
+        // Корректировка для ночных сеансов (начало до 06:00)
+        if (startTime.isBefore(LocalTime.of(6, 0))) {
+            sessionDateTime = sessionDateTime.plusDays(1);
+            if (sessionEndTime != null) {
+                sessionEndTime = sessionEndTime.plusDays(1);
+            }
+        }
+
+        // Если длительность не известна, используем запасное значение
+        if (sessionEndTime == null) {
+            sessionEndTime = sessionDateTime.plusMinutes(1);
+        }
+
+        // Определяем статус
         if (now.isBefore(sessionDateTime)) {
             return SessionStatus.SCHEDULED;
-        } else if (now.isAfter(sessionDateTime) && now.isBefore(sessionEndTime)) {
+        } else if (now.isBefore(sessionEndTime) || now.equals(sessionDateTime)) {
             return SessionStatus.ACTIVE;
         } else {
             return SessionStatus.COMPLETED;
         }
     }
+
 
     // Создаем состояние
     private SessionState createSessionState() {
@@ -105,68 +128,13 @@ public class Session {
         if (film == null || date == null || startTime == null) {
             return null;
         }
-        return LocalDateTime.of(date.toLocalDate(), startTime)
-                .plusMinutes(film.getDuration());
-    }
 
-    public boolean isSessionInFuture() {
-        LocalDateTime sessionDateTime = LocalDateTime.of(date.toLocalDate(), startTime);
-        return LocalDateTime.now().isBefore(sessionDateTime);
-    }
-
-    public boolean isSessionActive() {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime sessionDateTime = LocalDateTime.of(date.toLocalDate(), startTime);
-        LocalDateTime sessionEndTime = getEndDateTime();
-        return now.isAfter(sessionDateTime) && now.isBefore(sessionEndTime);
-    }
-
-    public boolean isSessionCompleted() {
-        LocalDateTime sessionEndTime = getEndDateTime();
-        return sessionEndTime != null && LocalDateTime.now().isAfter(sessionEndTime);
-    }
-
-    public Session() {
-    }
-
-    public Session(Film film, Hall hall, java.sql.Date date, java.time.LocalTime startTime, java.math.BigDecimal cost) {
-        this.film = film;
-        this.hall = hall;
-        this.date = date;
-        this.startTime = startTime;
-        this.cost = cost;
-    }
-
-    public void initFlyweight(FilmFlyweightFactory factory, FilmService service) {
-        this.filmFactory = factory;
-        this.filmService = service;
-
-        if (this.film != null && this.film.getFilmId() != null) {
-            factory.putFilm(this.film);
+        try {
+            return LocalDateTime.of(date.toLocalDate(), startTime)
+                    .plusMinutes(film.getDuration());
+        } catch (Exception e) {
+            return null;
         }
-    }
-
-    public Film getFilm() {
-        if (filmFactory != null && film != null && film.getFilmId() != null) {
-            Film cachedFilm = filmFactory.getFilm(film.getFilmId());
-            if (cachedFilm != null) {
-                return cachedFilm;
-            } else {
-                filmFactory.putFilm(film);
-            }
-        }
-        return film;
-    }
-
-    public void setFilm(Film film) {
-        this.film = film;
-        if (filmFactory != null && film != null && film.getFilmId() != null) {
-            filmFactory.putFilm(film);
-        }
-    }
-
-    public Long getFilmId() {
-        return film != null ? film.getFilmId() : null;
     }
 
     public UUID getSessionId() {
@@ -175,6 +143,14 @@ public class Session {
 
     public void setSessionId(UUID sessionId) {
         this.sessionId = sessionId;
+    }
+
+    public Film getFilm() {
+        return film;
+    }
+
+    public void setFilm(Film film) {
+        this.film = film;
     }
 
     public Hall getHall() {
@@ -208,4 +184,6 @@ public class Session {
     public void setCost(java.math.BigDecimal cost) {
         this.cost = cost;
     }
+
+
 }

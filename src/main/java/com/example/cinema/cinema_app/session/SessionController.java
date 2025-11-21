@@ -32,26 +32,8 @@ public class SessionController {
 
     @GetMapping()
     public String getAllSessions(Model model) {
-        List<Session> sessions = sessionService.findAll();
-
+        List<Session> sessions = sessionRepository.findAll();
         model.addAttribute("sessionItems", sessions);
-
-        long scheduledCount = sessions.stream()
-                .filter(s -> s.getSessionState() == SessionStatus.SCHEDULED)
-                .count();
-        long activeCount = sessions.stream()
-                .filter(s -> s.getSessionState() == SessionStatus.ACTIVE)
-                .count();
-        long completedCount = sessions.stream()
-                .filter(s -> s.getSessionState() == SessionStatus.COMPLETED)
-                .count();
-
-        model.addAttribute("scheduledCount", scheduledCount);
-        model.addAttribute("activeCount", activeCount);
-        model.addAttribute("completedCount", completedCount);
-        model.addAttribute("totalCount", sessions.size());
-        model.addAttribute("sessionStates", SessionStatus.values());
-
         return "session/listSessions";
     }
 
@@ -76,31 +58,13 @@ public class SessionController {
         return "redirect:/sessions";
     }
 
-    @GetMapping("/film/{filmId}")
-    public String getSessionsByFilm(@PathVariable Long filmId, Model model) {
-        List<Session> sessions = sessionService.findByFilmId(filmId);
-        Film film = filmService.findById(filmId);
-
-        model.addAttribute("sessions", sessions);
-        model.addAttribute("film", film);
-        model.addAttribute("flyweightInfo",
-                "Используется один экземпляр фильма для " + sessions.size() + " сеансов");
-
-        return "session/sessionsByFilm";
-    }
-
     @GetMapping("/edit/{sessionId}")
     public String showEditForm(@PathVariable UUID sessionId, Model model) {
         Session session = sessionService.findById(sessionId);
+        System.out.println("Session ID: " + sessionService.findById(sessionId));
+        System.out.println("Session ID: " + session.getSessionId());
         if (session == null) {
-            return "redirect:/sessions";
-        }
-        // Проверяем можно ли редактировать сеанс
-        if (!session.canModifySession()) {
-            model.addAttribute("error",
-                    "Нельзя редактировать сеанс в текущем состоянии: " + session.getStatusMessage());
-            return "redirect:/sessions";
-        }
+            return "redirect:/sessions";    }
         model.addAttribute("session", session);
         model.addAttribute("films", filmService.findAll());
         model.addAttribute("halls", hallService.findAll());

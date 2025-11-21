@@ -59,18 +59,6 @@ public class HallService {
         hallRepository.deleteById(id);
     }
 
-    public List<Hall> findByHallType(String hallType) {
-        return hallRepository.findByHallType(hallType);
-    }
-
-    public List<Hall> find3DHalls() {
-        return hallRepository.findByHas3dTrue();
-    }
-
-    public List<Hall> findHallsWithDolby() {
-        return hallRepository.findByHasDolbyTrue();
-    }
-
     public List<String> getAvailableHallTypes() {
         return Arrays.asList(
                 "1 - STANDARD (100 мест, без 3D, экран 10м)",

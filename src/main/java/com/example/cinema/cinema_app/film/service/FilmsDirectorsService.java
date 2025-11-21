@@ -12,7 +12,6 @@ public class FilmsDirectorsService {
 
     @Autowired
     private FilmsDirectorsRepository filmsDirectorsRepository;
-
     public List<FilmsDirectors> getAllFilmsDirectors() {
         return filmsDirectorsRepository.findAll();
     }

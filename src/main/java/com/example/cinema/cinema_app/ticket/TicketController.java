@@ -16,10 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Controller
 @RequestMapping("/tickets")
@@ -74,41 +71,46 @@ public class TicketController {
                 model.addAttribute("cancelReasonMap", cancelReasonMap);
             } else {
                 tickets = ticketRepository.findAll();
-                tickets.sort((t1, t2) -> {
-                    if (t1.getIsPurchased() && !t2.getIsPurchased()) {
-                        return -1;
-                    }
-                    if (!t1.getIsPurchased() && t2.getIsPurchased()) {
-                        return 1;
-                    }
-                    if (!t1.getIsPurchased() && !t2.getIsPurchased()) {
-                        boolean canBuy1 = t1.getSession() != null && t1.getSession().canPurchaseTickets();
-                        boolean canBuy2 = t2.getSession() != null && t2.getSession().canPurchaseTickets();
-
-                        if (canBuy1 && !canBuy2) {
+                if (tickets != null) {
+                    tickets.sort((t1, t2) -> {
+                        if (t1.getIsPurchased() && !t2.getIsPurchased()) {
                             return -1;
                         }
-                        if (!canBuy1 && canBuy2) {
+                        if (!t1.getIsPurchased() && t2.getIsPurchased()) {
                             return 1;
                         }
-                    }
+                        if (!t1.getIsPurchased() && !t2.getIsPurchased()) {
+                            boolean canBuy1 = t1.getSession() != null && t1.getSession().canPurchaseTickets();
+                            boolean canBuy2 = t2.getSession() != null && t2.getSession().canPurchaseTickets();
 
-                    UUID sessionId1 = t1.getSession() != null ? t1.getSession().getSessionId() : null;
-                    UUID sessionId2 = t2.getSession() != null ? t2.getSession().getSessionId() : null;
-
-                    if (sessionId1 != null && sessionId2 != null) {
-                        int sessionCompare = sessionId1.compareTo(sessionId2);
-                        if (sessionCompare != 0) {
-                            return sessionCompare;
+                            if (canBuy1 && !canBuy2) {
+                                return -1;
+                            }
+                            if (!canBuy1 && canBuy2) {
+                                return 1;
+                            }
                         }
-                    }
 
-                    int rowCompare = Integer.compare(t1.getRow(), t2.getRow());
-                    if (rowCompare != 0) {
-                        return rowCompare;
-                    }
-                    return Integer.compare(t1.getSeat(), t2.getSeat());
-                });
+                        UUID sessionId1 = t1.getSession() != null ? t1.getSession().getSessionId() : null;
+                        UUID sessionId2 = t2.getSession() != null ? t2.getSession().getSessionId() : null;
+
+                        if (sessionId1 != null && sessionId2 != null) {
+                            int sessionCompare = sessionId1.compareTo(sessionId2);
+                            if (sessionCompare != 0) {
+                                return sessionCompare;
+                            }
+                        }
+
+                        int rowCompare = Integer.compare(t1.getRow(), t2.getRow());
+                        if (rowCompare != 0) {
+                            return rowCompare;
+                        }
+                        return Integer.compare(t1.getSeat(), t2.getSeat());
+                    });
+                } else {
+                    tickets = Collections.emptyList();
+                }
+
             }
 
             model.addAttribute("tickets", tickets);
@@ -217,6 +219,13 @@ public class TicketController {
         Map<String, Object> result = new HashMap<>();
 
         try {
+            if (basePrice.compareTo(BigDecimal.ZERO) < 0) {
+                throw new IllegalArgumentException("Базовая цена не может быть отрицательной");
+            }
+
+            if (basePrice.compareTo(BigDecimal.ZERO) == 0) {
+                throw new IllegalArgumentException("Базовая цена не может быть нулевой");
+            }
             PricingStrategy strategy = createPricingStrategy(discountType);
             BigDecimal finalPrice = strategy.calculatePrice(basePrice);
             BigDecimal discountAmount = basePrice.subtract(finalPrice);
@@ -236,7 +245,11 @@ public class TicketController {
         return result;
     }
 
-    private PricingStrategy createPricingStrategy(DiscountType discountType) {
+    public PricingStrategy createPricingStrategy(DiscountType discountType) {
+        if (discountType == null) {
+            return new RegularPricingStrategy();
+        }
+
         switch (discountType) {
             case STUDENT_DISCOUNT:
                 return new StudentPricingStrategy();

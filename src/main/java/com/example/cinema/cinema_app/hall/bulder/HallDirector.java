@@ -3,7 +3,11 @@ package com.example.cinema.cinema_app.hall.bulder;
 import com.example.cinema.cinema_app.hall.Hall;
 
 public class HallDirector {
-    private HallBuilder builder;
+    protected HallBuilder builder;
+
+    public HallBuilder getBuilder() {
+        return builder;
+    }
 
     public HallDirector(int hallType) {
         switch (hallType) {

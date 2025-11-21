@@ -8,7 +8,7 @@ public class ActiveSessionState implements SessionState {
 
     @Override
     public boolean canPurchaseTickets() {
-        return true;
+        return false;
     }
 
     @Override

@@ -3,11 +3,12 @@ package com.example.cinema.cinema_app.film;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
 import com.example.cinema.cinema_app.genre.Genre;
 import com.example.cinema.cinema_app.session.Session;
 import com.example.cinema.cinema_app.actor.Actor;
 import com.example.cinema.cinema_app.director.Director;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
 import jakarta.persistence.*;
 
@@ -18,6 +19,8 @@ public class Film {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long filmId;
 
+    @NotBlank(message = "Название фильма обязательно")
+    @Size(min = 1, max = 255, message = "Длина названия от 1 до 255 символов")
     @Column(nullable = false, length = 255)
     private String name;
 
@@ -106,6 +109,7 @@ public class Film {
         genres.add(genre);
     }
 
+
     public List<Genre> getGenres() {
         return genres;
     }
@@ -126,6 +130,9 @@ public class Film {
         return actors;
     }
 
+    public Long getId() {
+        return filmId;
+    }
 }
 
 
